@@ -5,19 +5,10 @@
 		"factoryName": {
 			"value": "tam-adf-adp-dev"
 		},
-		"AmazonS31_secretAccessKey": {
-			"value": ""
-		},
 		"AzureDataLakeStorage1_accountKey": {
 			"value": ""
 		},
 		"AzureDataLakeStorage2Binary_accountKey": {
-			"value": ""
-		},
-		"AzureDatabricks1_accessToken": {
-			"value": ""
-		},
-		"AzureDatabricksDeltaLake1_accessToken": {
 			"value": ""
 		},
 		"AzureSqlDatabase1_password": {
@@ -26,17 +17,11 @@
 		"RestService1_clientSecret": {
 			"value": ""
 		},
-		"AmazonS31_properties_typeProperties_accessKeyId": {
-			"value": "5bcvvfm2vl2tj4l0fnmnolsm1q"
-		},
 		"AzureDataLakeStorage1_properties_typeProperties_url": {
 			"value": "https://stadlsadpdev.dfs.core.windows.net/"
 		},
 		"AzureDataLakeStorage2Binary_properties_typeProperties_url": {
 			"value": "https://stadlsadpdev.dfs.core.windows.net/"
-		},
-		"AzureDatabricks1_properties_typeProperties_existingClusterId": {
-			"value": "0806-092546-wfjkmmu2"
 		},
 		"AzureSqlDatabase1_properties_typeProperties_server": {
 			"value": "sql-adp-dev.database.windows.net"
@@ -58,9 +43,6 @@
 		},
 		"RestService1_properties_typeProperties_clientId": {
 			"value": "1pnhsb07p3o130hdaa0abol181"
-		},
-		"RestService2_properties_typeProperties_url": {
-			"value": "https://dx-datashare-common.toyota-asia.com/"
 		},
 		"AzureBlobStorage887_properties_privateLinkResourceId": {
 			"value": "/subscriptions/1aa8e62a-afdc-45ad-ad0b-c8ee3a339937/resourceGroups/rg-adp-dev/providers/Microsoft.Storage/storageAccounts/stadlsadpdev"
