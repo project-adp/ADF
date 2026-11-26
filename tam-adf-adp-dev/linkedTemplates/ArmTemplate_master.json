@@ -1,0 +1,390 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "tam-adf-adp-dev"
+		},
+		"AmazonS31_secretAccessKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'secretAccessKey' of 'AmazonS31'"
+		},
+		"AzureDataLakeStorage1_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage1'"
+		},
+		"AzureDataLakeStorage2Binary_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'AzureDataLakeStorage2Binary'"
+		},
+		"AzureDatabricks1_accessToken": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accessToken' of 'AzureDatabricks1'"
+		},
+		"AzureDatabricksDeltaLake1_accessToken": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accessToken' of 'AzureDatabricksDeltaLake1'"
+		},
+		"AzureSqlDatabase1_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'AzureSqlDatabase1'"
+		},
+		"RestService1_clientSecret": {
+			"type": "secureString",
+			"metadata": "Secure string for 'clientSecret' of 'RestService1'"
+		},
+		"AmazonS31_properties_typeProperties_accessKeyId": {
+			"type": "string",
+			"defaultValue": "5bcvvfm2vl2tj4l0fnmnolsm1q"
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://stadlsadpdev.dfs.core.windows.net/"
+		},
+		"AzureDataLakeStorage2Binary_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://stadlsadpdev.dfs.core.windows.net/"
+		},
+		"AzureDatabricks1_properties_typeProperties_existingClusterId": {
+			"type": "string",
+			"defaultValue": "0806-092546-wfjkmmu2"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "sql-adp-dev.database.windows.net"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "db-adp-dev"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "sqladmin"
+		},
+		"HttpServer1_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://dx-datastream-tam-api-dev.toyota-asia.com/"
+		},
+		"HttpServer2_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://dx-datashare-common.toyota-asia.com/"
+		},
+		"RestService1_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://dx-datastream-tam-api.toyota-asia.com"
+		},
+		"RestService1_properties_typeProperties_clientId": {
+			"type": "string",
+			"defaultValue": "1pnhsb07p3o130hdaa0abol181"
+		},
+		"RestService2_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://dx-datashare-common.toyota-asia.com/"
+		},
+		"AzureBlobStorage887_properties_privateLinkResourceId": {
+			"type": "string",
+			"defaultValue": "/subscriptions/1aa8e62a-afdc-45ad-ad0b-c8ee3a339937/resourceGroups/rg-adp-dev/providers/Microsoft.Storage/storageAccounts/stadlsadpdev"
+		},
+		"AzureBlobStorage887_properties_groupId": {
+			"type": "string",
+			"defaultValue": "blob"
+		},
+		"AzureBlobStorage887_properties_fqdns": {
+			"type": "array",
+			"defaultValue": [
+				"stadlsadpdev.blob.core.windows.net"
+			]
+		},
+		"AzureDataLakeStorage135_properties_privateLinkResourceId": {
+			"type": "string",
+			"defaultValue": "/subscriptions/1aa8e62a-afdc-45ad-ad0b-c8ee3a339937/resourceGroups/rg-adp-dev/providers/Microsoft.Storage/storageAccounts/stadlsadpdev"
+		},
+		"AzureDataLakeStorage135_properties_groupId": {
+			"type": "string",
+			"defaultValue": "dfs"
+		},
+		"AzureDataLakeStorage135_properties_fqdns": {
+			"type": "array",
+			"defaultValue": [
+				"stadlsadpdev.dfs.core.windows.net"
+			]
+		},
+		"AzureDatabricks435_properties_privateLinkResourceId": {
+			"type": "string",
+			"defaultValue": "/subscriptions/1f1971f8-299f-4b81-a442-063a9167cc72/resourceGroups/rg-didx-dev/providers/Microsoft.Databricks/workspaces/adb-didx-dev"
+		},
+		"AzureDatabricks435_properties_groupId": {
+			"type": "string",
+			"defaultValue": "databricks_ui_api"
+		},
+		"AzureDatabricks435_properties_fqdns": {
+			"type": "array",
+			"defaultValue": [
+				"adb-4230496331526218.18.azuredatabricks.net"
+			]
+		},
+		"AzureKeyVaultADPDev_properties_privateLinkResourceId": {
+			"type": "string",
+			"defaultValue": "/subscriptions/1aa8e62a-afdc-45ad-ad0b-c8ee3a339937/resourceGroups/rg-adp-dev/providers/Microsoft.KeyVault/vaults/kv-tam-adp-dev"
+		},
+		"AzureKeyVaultADPDev_properties_groupId": {
+			"type": "string",
+			"defaultValue": "vault"
+		},
+		"AzureKeyVaultADPDev_properties_fqdns": {
+			"type": "array",
+			"defaultValue": [
+				"kv-tam-adp-dev.vault.azure.net"
+			]
+		},
+		"AzureSqlDatabase153_properties_privateLinkResourceId": {
+			"type": "string",
+			"defaultValue": "/subscriptions/1aa8e62a-afdc-45ad-ad0b-c8ee3a339937/resourceGroups/rg-adp-dev/providers/Microsoft.Sql/servers/sql-adp-dev"
+		},
+		"AzureSqlDatabase153_properties_groupId": {
+			"type": "string",
+			"defaultValue": "sqlServer"
+		},
+		"AzureSqlDatabase153_properties_fqdns": {
+			"type": "array",
+			"defaultValue": [
+				"sql-adp-dev.database.windows.net"
+			]
+		},
+		"containerUri": {
+			"type": "string",
+			"metadata": "URI to storage account containing linked ARM templates"
+		},
+		"containerSasToken": {
+			"type": "string",
+			"metadata": "Sas token to storage account containing linked ARM templates"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "tam-adf-adp-dev_ArmTemplate_0",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2024-03-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_0.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					},
+					"AmazonS31_secretAccessKey": {
+						"value": "[parameters('AmazonS31_secretAccessKey')]"
+					},
+					"AzureDataLakeStorage1_accountKey": {
+						"value": "[parameters('AzureDataLakeStorage1_accountKey')]"
+					},
+					"AzureDataLakeStorage2Binary_accountKey": {
+						"value": "[parameters('AzureDataLakeStorage2Binary_accountKey')]"
+					},
+					"AzureDatabricks1_accessToken": {
+						"value": "[parameters('AzureDatabricks1_accessToken')]"
+					},
+					"AzureDatabricksDeltaLake1_accessToken": {
+						"value": "[parameters('AzureDatabricksDeltaLake1_accessToken')]"
+					},
+					"AzureSqlDatabase1_password": {
+						"value": "[parameters('AzureSqlDatabase1_password')]"
+					},
+					"RestService1_clientSecret": {
+						"value": "[parameters('RestService1_clientSecret')]"
+					},
+					"AzureBlobStorage887_properties_privateLinkResourceId": {
+						"value": "[parameters('AzureBlobStorage887_properties_privateLinkResourceId')]"
+					},
+					"AzureBlobStorage887_properties_groupId": {
+						"value": "[parameters('AzureBlobStorage887_properties_groupId')]"
+					},
+					"AzureBlobStorage887_properties_fqdns": {
+						"value": "[parameters('AzureBlobStorage887_properties_fqdns')]"
+					},
+					"AzureDataLakeStorage135_properties_privateLinkResourceId": {
+						"value": "[parameters('AzureDataLakeStorage135_properties_privateLinkResourceId')]"
+					},
+					"AzureDataLakeStorage135_properties_groupId": {
+						"value": "[parameters('AzureDataLakeStorage135_properties_groupId')]"
+					},
+					"AzureDataLakeStorage135_properties_fqdns": {
+						"value": "[parameters('AzureDataLakeStorage135_properties_fqdns')]"
+					},
+					"AzureDatabricks435_properties_privateLinkResourceId": {
+						"value": "[parameters('AzureDatabricks435_properties_privateLinkResourceId')]"
+					},
+					"AzureDatabricks435_properties_groupId": {
+						"value": "[parameters('AzureDatabricks435_properties_groupId')]"
+					},
+					"AzureDatabricks435_properties_fqdns": {
+						"value": "[parameters('AzureDatabricks435_properties_fqdns')]"
+					},
+					"AzureKeyVaultADPDev_properties_privateLinkResourceId": {
+						"value": "[parameters('AzureKeyVaultADPDev_properties_privateLinkResourceId')]"
+					},
+					"AzureKeyVaultADPDev_properties_groupId": {
+						"value": "[parameters('AzureKeyVaultADPDev_properties_groupId')]"
+					},
+					"AzureKeyVaultADPDev_properties_fqdns": {
+						"value": "[parameters('AzureKeyVaultADPDev_properties_fqdns')]"
+					},
+					"AzureSqlDatabase153_properties_privateLinkResourceId": {
+						"value": "[parameters('AzureSqlDatabase153_properties_privateLinkResourceId')]"
+					},
+					"AzureSqlDatabase153_properties_groupId": {
+						"value": "[parameters('AzureSqlDatabase153_properties_groupId')]"
+					},
+					"AzureSqlDatabase153_properties_fqdns": {
+						"value": "[parameters('AzureSqlDatabase153_properties_fqdns')]"
+					},
+					"AmazonS31_properties_typeProperties_accessKeyId": {
+						"value": "[parameters('AmazonS31_properties_typeProperties_accessKeyId')]"
+					},
+					"AzureDataLakeStorage1_properties_typeProperties_url": {
+						"value": "[parameters('AzureDataLakeStorage1_properties_typeProperties_url')]"
+					},
+					"AzureDataLakeStorage2Binary_properties_typeProperties_url": {
+						"value": "[parameters('AzureDataLakeStorage2Binary_properties_typeProperties_url')]"
+					},
+					"AzureDatabricks1_properties_typeProperties_existingClusterId": {
+						"value": "[parameters('AzureDatabricks1_properties_typeProperties_existingClusterId')]"
+					},
+					"AzureSqlDatabase1_properties_typeProperties_server": {
+						"value": "[parameters('AzureSqlDatabase1_properties_typeProperties_server')]"
+					},
+					"AzureSqlDatabase1_properties_typeProperties_database": {
+						"value": "[parameters('AzureSqlDatabase1_properties_typeProperties_database')]"
+					},
+					"AzureSqlDatabase1_properties_typeProperties_userName": {
+						"value": "[parameters('AzureSqlDatabase1_properties_typeProperties_userName')]"
+					},
+					"HttpServer1_properties_typeProperties_url": {
+						"value": "[parameters('HttpServer1_properties_typeProperties_url')]"
+					},
+					"HttpServer2_properties_typeProperties_url": {
+						"value": "[parameters('HttpServer2_properties_typeProperties_url')]"
+					},
+					"RestService1_properties_typeProperties_url": {
+						"value": "[parameters('RestService1_properties_typeProperties_url')]"
+					},
+					"RestService1_properties_typeProperties_clientId": {
+						"value": "[parameters('RestService1_properties_typeProperties_clientId')]"
+					},
+					"RestService2_properties_typeProperties_url": {
+						"value": "[parameters('RestService2_properties_typeProperties_url')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "tam-adf-adp-dev_ArmTemplate_1",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2024-03-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_1.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					}
+				}
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.Resources/deployments', 'tam-adf-adp-dev_ArmTemplate_0')]"
+			]
+		},
+		{
+			"name": "tam-adf-adp-dev_ArmTemplate_2",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2024-03-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_2.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					}
+				}
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.Resources/deployments', 'tam-adf-adp-dev_ArmTemplate_1')]"
+			]
+		},
+		{
+			"name": "tam-adf-adp-dev_ArmTemplate_3",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2024-03-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_3.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					}
+				}
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.Resources/deployments', 'tam-adf-adp-dev_ArmTemplate_2')]"
+			]
+		},
+		{
+			"name": "tam-adf-adp-dev_ArmTemplate_4",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2024-03-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_4.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					}
+				}
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.Resources/deployments', 'tam-adf-adp-dev_ArmTemplate_3')]"
+			]
+		},
+		{
+			"name": "tam-adf-adp-dev_ArmTemplate_5",
+			"type": "Microsoft.Resources/deployments",
+			"apiVersion": "2024-03-01",
+			"properties": {
+				"mode": "incremental",
+				"templateLink": {
+					"uri": "[concat(parameters('containerUri'), '/ArmTemplate_5.json', parameters('containerSasToken'))]",
+					"contentVersion": "1.0.0.0"
+				},
+				"parameters": {
+					"factoryName": {
+						"value": "[parameters('factoryName')]"
+					}
+				}
+			},
+			"dependsOn": [
+				"[resourceId('Microsoft.Resources/deployments', 'tam-adf-adp-dev_ArmTemplate_4')]"
+			]
+		}
+	]
+}

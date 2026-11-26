@@ -1,0 +1,4974 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "tam-adf-adp-dev"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/Test-API-S3-0x12')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "hit api with token",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "getToken",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "Filter dataName",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"httpRequestTimeout": "00:05:00",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "POST",
+								"requestBody": {
+									"value": "{\n\"serviceRequestHeader\": {\n\"requestCode\": \"RDP-DS-TAM-REQ-0x12\",\n\"requestDescription\": \"The request to share the 0x12 data for TAM.\"\n},\n\"serviceRequestBody\":{\n\"requestDate\":\"@{activity('Filter dataName').output.Value[0].date}\"\n}\n}",
+									"type": "Expression"
+								},
+								"additionalHeaders": {
+									"Content-Type": "application/json",
+									"Authorization": {
+										"value": "@concat('Bearer ',activity('getToken').output.access_token)",
+										"type": "Expression"
+									}
+								}
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"path": "$['serviceRequesHeader']['statusCode']"
+										},
+										"sink": {
+											"name": "statusCode"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceRequesHeader']['statusDescription']"
+										},
+										"sink": {
+											"name": "statusDescription"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['expirySeconds']"
+										},
+										"sink": {
+											"name": "expirySeconds"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['fileFormat']"
+										},
+										"sink": {
+											"name": "fileFormat"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['datasetLinks'][0]['fileName']"
+										},
+										"sink": {
+											"name": "fileName"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['datasetLinks'][0]['link']"
+										},
+										"sink": {
+											"name": "link"
+										}
+									}
+								],
+								"collectionReference": ""
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "RestResource1_0x12",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "parquet_info_0x12",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Validation1",
+						"type": "Validation",
+						"dependsOn": [
+							{
+								"activity": "hit api with token",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "parquet_info_0x12",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"timeout": "0.12:00:00",
+							"sleep": 10,
+							"childItems": true
+						}
+					},
+					{
+						"name": "Lookup1",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "Validation1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": false,
+									"wildcardFileName": "*.parquet",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "ParquetReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "parquet_info_0x12",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Delete1",
+						"type": "Delete",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "parquet_info_0x12",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"logStorageSettings": {
+								"linkedServiceName": {
+									"referenceName": "AzureDataLakeStorage1",
+									"type": "LinkedServiceReference"
+								},
+								"path": "testingcontainer/Log delete"
+							},
+							"enableLogging": true,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": false,
+								"wildcardFileName": "*.parquet",
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "Set variable1",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "Lookup1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "link",
+							"value": {
+								"value": "@activity('Lookup1').output.value[0].link",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "save data to adls",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Delete previous data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "HttpReadSettings",
+									"requestMethod": "GET"
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "BinaryInputFromLink",
+								"type": "DatasetReference",
+								"parameters": {
+									"DynamicURL": {
+										"value": "@replace(trim(variables('link')),'https://dx-datashare-common.toyota-asia.com/','')",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "BinaryOutputFromLink",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Data flow2",
+						"type": "ExecuteDataFlow",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "dataflow2_0x12",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"source1": {},
+									"sink1": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "None",
+							"cacheSinks": {
+								"firstRowOnly": true
+							}
+						}
+					},
+					{
+						"name": "Delete previous data",
+						"type": "Delete",
+						"dependsOn": [
+							{
+								"activity": "Set variable1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "folderpath",
+								"type": "DatasetReference",
+								"parameters": {
+									"folderdir": {
+										"value": "@concat('tcap/',replace(split(split(string(variables('link')),'/tcap/')[1],'/part-')[0],'%3D','='))",
+										"type": "Expression"
+									}
+								}
+							},
+							"logStorageSettings": {
+								"linkedServiceName": {
+									"referenceName": "AzureDataLakeStorage2Binary",
+									"type": "LinkedServiceReference"
+								},
+								"path": "testingcontainer/Log Overwrite"
+							},
+							"enableLogging": true,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "Notebook process to raw",
+						"type": "DatabricksNotebook",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [
+							{
+								"activity": "save data to adls",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebookPath": "/Users/azarel.adi@ag-it.com/project-adp-notebook/pipelines/source2raw/nb_getdatafromadls_ox12"
+						},
+						"linkedServiceName": {
+							"referenceName": "AzureDatabricks1",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "getToken",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "GetSecret",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "POST",
+							"headers": {
+								"Content-Type": "application/x-www-form-urlencoded",
+								"Authorization": {
+									"value": "@concat('Basic ', base64(activity('GetSecret').output.value))",
+									"type": "Expression"
+								}
+							},
+							"url": "https://auth-dx-datastream.ap.toyota-asia.com/oauth2/token",
+							"connectVia": {
+								"referenceName": "AutoResolveIntegrationRuntime",
+								"type": "IntegrationRuntimeReference"
+							},
+							"body": {
+								"value": "grant_type=client_credentials",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "GetSecret",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Delete1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "GET",
+							"headers": {},
+							"url": "https://kv-tam-adp-dev.vault.azure.net/secrets/kv-adf-adp-prd-idsec/c3fd02fd1ce14bc1b89f65e01a7c809e?api-version=7.4",
+							"connectVia": {
+								"referenceName": "AutoResolveIntegrationRuntime",
+								"type": "IntegrationRuntimeReference"
+							},
+							"authentication": {
+								"type": "MSI",
+								"resource": "https://vault.azure.net"
+							}
+						}
+					},
+					{
+						"name": "Get Current Config",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.00:10:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": false,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "ParquetReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "DS_ConfigDate_Parquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"folderPath": "ConfigDate",
+									"fileName": "Date.parquet"
+								}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Filter dataName",
+						"type": "Filter",
+						"dependsOn": [
+							{
+								"activity": "Get Current Config",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get Current Config').output.value",
+								"type": "Expression"
+							},
+							"condition": {
+								"value": "@equals(item().dataName, variables('p_dataName'))",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Execute update Date h-1",
+						"type": "ExecutePipeline",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [
+							{
+								"activity": "save data to adls",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_Update_ConfigDate",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"p_dataName": {
+									"value": "@variables('p_dataName')",
+									"type": "Expression"
+								}
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"counter": {
+						"type": "Integer",
+						"defaultValue": 0
+					},
+					"targetCount": {
+						"type": "Integer",
+						"defaultValue": 0
+					},
+					"link": {
+						"type": "String",
+						"defaultValue": " https://dx-datashare-common.toyota-asia.com"
+					},
+					"p_dataName": {
+						"type": "String",
+						"defaultValue": "0x12"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2026-10-20T07:31:29Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Test-API-S3-0x32-imp')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "hit api with token",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "getToken",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "Filter dataName",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"httpRequestTimeout": "00:05:00",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "POST",
+								"requestBody": {
+									"value": "{\n\"serviceRequestHeader\": {\n\"requestCode\": \"RDP-DS-TAM-REQ-0x32-IMP\",\n\"requestDescription\": \"The request to share the 0x32-imp data for TAM.\"\n},\n\"serviceRequestBody\":{\n\"requestDate\":\"@{activity('Filter dataName').output.Value[0].date}\"\n}\n}",
+									"type": "Expression"
+								},
+								"additionalHeaders": {
+									"Content-Type": "application/json",
+									"Authorization": {
+										"value": "@concat('Bearer ',activity('getToken').output.access_token)",
+										"type": "Expression"
+									}
+								}
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"path": "$['serviceRequesHeader']['statusCode']"
+										},
+										"sink": {
+											"name": "statusCode"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceRequesHeader']['statusDescription']"
+										},
+										"sink": {
+											"name": "statusDescription"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['expirySeconds']"
+										},
+										"sink": {
+											"name": "expirySeconds"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['fileFormat']"
+										},
+										"sink": {
+											"name": "fileFormat"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['datasetLinks'][0]['fileName']"
+										},
+										"sink": {
+											"name": "fileName"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['datasetLinks'][0]['link']"
+										},
+										"sink": {
+											"name": "link"
+										}
+									}
+								],
+								"collectionReference": ""
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "RestResource1_0x32_imp",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "parquet_info_0x32_imp",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Validation1",
+						"type": "Validation",
+						"dependsOn": [
+							{
+								"activity": "hit api with token",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "parquet_info_0x32_imp",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"timeout": "0.12:00:00",
+							"sleep": 10,
+							"childItems": true
+						}
+					},
+					{
+						"name": "Lookup1",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "Validation1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": false,
+									"wildcardFileName": "*.parquet",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "ParquetReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "parquet_info_0x32_imp",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Delete1",
+						"type": "Delete",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "parquet_info_0x32_imp",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"logStorageSettings": {
+								"linkedServiceName": {
+									"referenceName": "AzureDataLakeStorage1",
+									"type": "LinkedServiceReference"
+								},
+								"path": "testingcontainer/Log delete"
+							},
+							"enableLogging": true,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": false,
+								"wildcardFileName": "*.parquet",
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "Set variable1",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "Lookup1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "link",
+							"value": {
+								"value": "@activity('Lookup1').output.value[0].link",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "save data to adls",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Delete previous data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "HttpReadSettings",
+									"requestMethod": "GET"
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "BinaryInputFromLink",
+								"type": "DatasetReference",
+								"parameters": {
+									"DynamicURL": {
+										"value": "@replace(trim(variables('link')),'https://dx-datashare-common.toyota-asia.com/','')",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "BinaryOutputFromLink",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Data flow2",
+						"type": "ExecuteDataFlow",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "dataflow2_0x32",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"source1": {},
+									"sink1": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "None",
+							"cacheSinks": {
+								"firstRowOnly": true
+							}
+						}
+					},
+					{
+						"name": "Delete previous data",
+						"type": "Delete",
+						"dependsOn": [
+							{
+								"activity": "Set variable1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "folderpath",
+								"type": "DatasetReference",
+								"parameters": {
+									"folderdir": {
+										"value": "@concat('tcap/',replace(split(split(string(variables('link')),'/tcap/')[1],'/part-')[0],'%3D','='))",
+										"type": "Expression"
+									}
+								}
+							},
+							"logStorageSettings": {
+								"linkedServiceName": {
+									"referenceName": "AzureDataLakeStorage2Binary",
+									"type": "LinkedServiceReference"
+								},
+								"path": "testingcontainer/Log Overwrite"
+							},
+							"enableLogging": true,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "getToken",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "GetSecret",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "POST",
+							"headers": {
+								"Content-Type": "application/x-www-form-urlencoded",
+								"Authorization": {
+									"value": "@concat('Basic ', base64(activity('GetSecret').output.value))",
+									"type": "Expression"
+								}
+							},
+							"url": "https://auth-dx-datastream.ap.toyota-asia.com/oauth2/token",
+							"connectVia": {
+								"referenceName": "AutoResolveIntegrationRuntime",
+								"type": "IntegrationRuntimeReference"
+							},
+							"body": {
+								"value": "grant_type=client_credentials",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "GetSecret",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Delete1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "GET",
+							"headers": {},
+							"url": "https://kv-tam-adp-dev.vault.azure.net/secrets/kv-adf-adp-prd-idsec/c3fd02fd1ce14bc1b89f65e01a7c809e?api-version=7.4",
+							"connectVia": {
+								"referenceName": "AutoResolveIntegrationRuntime",
+								"type": "IntegrationRuntimeReference"
+							},
+							"authentication": {
+								"type": "MSI",
+								"resource": "https://vault.azure.net"
+							}
+						}
+					},
+					{
+						"name": "Get Current Config",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.00:10:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": false,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "ParquetReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "DS_ConfigDate_Parquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"folderPath": "ConfigDate",
+									"fileName": "Date.parquet"
+								}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Filter dataName",
+						"type": "Filter",
+						"dependsOn": [
+							{
+								"activity": "Get Current Config",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get Current Config').output.value",
+								"type": "Expression"
+							},
+							"condition": {
+								"value": "@equals(item().dataName, variables('p_dataName'))",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Execute update Date h-1",
+						"type": "ExecutePipeline",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [
+							{
+								"activity": "save data to adls",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_Update_ConfigDate",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"p_dataName": {
+									"value": "@variables('p_dataName')",
+									"type": "Expression"
+								}
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"counter": {
+						"type": "Integer",
+						"defaultValue": 0
+					},
+					"targetCount": {
+						"type": "Integer",
+						"defaultValue": 0
+					},
+					"link": {
+						"type": "String",
+						"defaultValue": " https://dx-datashare-common.toyota-asia.com"
+					},
+					"p_dataName": {
+						"type": "String",
+						"defaultValue": "0x32_imp"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2026-10-20T07:31:29Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Test-API-S3-0x32')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "hit api with token",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "getToken",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "Filter dataName",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"httpRequestTimeout": "00:05:00",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "POST",
+								"requestBody": {
+									"value": "{\n\"serviceRequestHeader\": {\n\"requestCode\": \"RDP-DS-TAM-REQ-0x32\",\n\"requestDescription\": \"The request to share the 0x32 data for TAM.\"\n},\n\"serviceRequestBody\":{\n\"requestDate\":\"@{activity('Filter dataName').output.Value[0].date}\"\n}\n}",
+									"type": "Expression"
+								},
+								"additionalHeaders": {
+									"Content-Type": "application/json",
+									"Authorization": {
+										"value": "@concat('Bearer ',activity('getToken').output.access_token)",
+										"type": "Expression"
+									}
+								}
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"path": "$['serviceRequesHeader']['statusCode']"
+										},
+										"sink": {
+											"name": "statusCode"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceRequesHeader']['statusDescription']"
+										},
+										"sink": {
+											"name": "statusDescription"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['expirySeconds']"
+										},
+										"sink": {
+											"name": "expirySeconds"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['fileFormat']"
+										},
+										"sink": {
+											"name": "fileFormat"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['datasetLinks'][0]['fileName']"
+										},
+										"sink": {
+											"name": "fileName"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['datasetLinks'][0]['link']"
+										},
+										"sink": {
+											"name": "link"
+										}
+									}
+								],
+								"collectionReference": ""
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "RestResource1_0x32",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "parquet_info_0x32",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Validation1",
+						"type": "Validation",
+						"dependsOn": [
+							{
+								"activity": "hit api with token",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "parquet_info_0x32",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"timeout": "0.12:00:00",
+							"sleep": 10,
+							"childItems": true
+						}
+					},
+					{
+						"name": "Lookup1",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "Validation1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": false,
+									"wildcardFileName": "*.parquet",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "ParquetReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "parquet_info_0x32",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Delete1",
+						"type": "Delete",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "parquet_info_0x32",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"logStorageSettings": {
+								"linkedServiceName": {
+									"referenceName": "AzureDataLakeStorage1",
+									"type": "LinkedServiceReference"
+								},
+								"path": "testingcontainer/Log delete"
+							},
+							"enableLogging": true,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": false,
+								"wildcardFileName": "*.parquet",
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "Set variable1",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "Lookup1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "link",
+							"value": {
+								"value": "@activity('Lookup1').output.value[0].link",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "save data to adls",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Delete previous data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "HttpReadSettings",
+									"requestMethod": "GET"
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "BinaryInputFromLink",
+								"type": "DatasetReference",
+								"parameters": {
+									"DynamicURL": {
+										"value": "@replace(trim(variables('link')),'https://dx-datashare-common.toyota-asia.com/','')",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "BinaryOutputFromLink",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Data flow2",
+						"type": "ExecuteDataFlow",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "dataflow2_0x32",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"source1": {},
+									"sink1": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "None",
+							"cacheSinks": {
+								"firstRowOnly": true
+							}
+						}
+					},
+					{
+						"name": "Delete previous data",
+						"type": "Delete",
+						"dependsOn": [
+							{
+								"activity": "Set variable1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "folderpath",
+								"type": "DatasetReference",
+								"parameters": {
+									"folderdir": {
+										"value": "@concat('tcap/',replace(split(split(string(variables('link')),'/tcap/')[1],'/part-')[0],'%3D','='))",
+										"type": "Expression"
+									}
+								}
+							},
+							"logStorageSettings": {
+								"linkedServiceName": {
+									"referenceName": "AzureDataLakeStorage2Binary",
+									"type": "LinkedServiceReference"
+								},
+								"path": "testingcontainer/Log Overwrite"
+							},
+							"enableLogging": true,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "getToken",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "GetSecret",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "POST",
+							"headers": {
+								"Content-Type": "application/x-www-form-urlencoded",
+								"Authorization": {
+									"value": "@concat('Basic ', base64(activity('GetSecret').output.value))",
+									"type": "Expression"
+								}
+							},
+							"url": "https://auth-dx-datastream.ap.toyota-asia.com/oauth2/token",
+							"connectVia": {
+								"referenceName": "AutoResolveIntegrationRuntime",
+								"type": "IntegrationRuntimeReference"
+							},
+							"body": {
+								"value": "grant_type=client_credentials",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "GetSecret",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Delete1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "GET",
+							"headers": {},
+							"url": "https://kv-tam-adp-dev.vault.azure.net/secrets/kv-adf-adp-prd-idsec/c3fd02fd1ce14bc1b89f65e01a7c809e?api-version=7.4",
+							"connectVia": {
+								"referenceName": "AutoResolveIntegrationRuntime",
+								"type": "IntegrationRuntimeReference"
+							},
+							"authentication": {
+								"type": "MSI",
+								"resource": "https://vault.azure.net"
+							}
+						}
+					},
+					{
+						"name": "Get Current Config",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.00:10:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": false,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "ParquetReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "DS_ConfigDate_Parquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"folderPath": "ConfigDate",
+									"fileName": "Date.parquet"
+								}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Filter dataName",
+						"type": "Filter",
+						"dependsOn": [
+							{
+								"activity": "Get Current Config",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get Current Config').output.value",
+								"type": "Expression"
+							},
+							"condition": {
+								"value": "@equals(item().dataName, variables('p_dataName'))",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Execute update Date h-1",
+						"type": "ExecutePipeline",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [
+							{
+								"activity": "save data to adls",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_Update_ConfigDate",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"p_dataName": {
+									"value": "@variables('p_dataName')",
+									"type": "Expression"
+								}
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"counter": {
+						"type": "Integer",
+						"defaultValue": 0
+					},
+					"targetCount": {
+						"type": "Integer",
+						"defaultValue": 0
+					},
+					"link": {
+						"type": "String",
+						"defaultValue": " https://dx-datashare-common.toyota-asia.com"
+					},
+					"p_dataName": {
+						"type": "String",
+						"defaultValue": "0x32"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2026-10-20T07:31:29Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Test-API-S3-0x41')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "hit api with token",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "getToken",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "Filter dataName",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"httpRequestTimeout": "00:05:00",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "POST",
+								"requestBody": {
+									"value": "{\n    \"serviceRequestHeader\": {\n        \"requestCode\": \"RDP-DS-TAM-REQ-0x41\",\n        \"requestDescription\": \"The request to share the 0x41 data for TAM.\" \n    },\n    \"serviceRequestBody\":{\n        \"requestDate\":\"@{activity('Filter dataName').output.Value[0].date}\"\n    }\n}",
+									"type": "Expression"
+								},
+								"additionalHeaders": {
+									"Content-Type": "application/json",
+									"Authorization": {
+										"value": "@concat('Bearer ',activity('getToken').output.access_token)",
+										"type": "Expression"
+									}
+								}
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"path": "$['serviceRequesHeader']['statusCode']"
+										},
+										"sink": {
+											"name": "statusCode"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceRequesHeader']['statusDescription']"
+										},
+										"sink": {
+											"name": "statusDescription"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['expirySeconds']"
+										},
+										"sink": {
+											"name": "expirySeconds"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['fileFormat']"
+										},
+										"sink": {
+											"name": "fileFormat"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['datasetLinks'][0]['fileName']"
+										},
+										"sink": {
+											"name": "fileName"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['datasetLinks'][0]['link']"
+										},
+										"sink": {
+											"name": "link"
+										}
+									}
+								],
+								"collectionReference": ""
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "RestResource1_0x41",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "parquet_info_0x41",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Validation1",
+						"type": "Validation",
+						"dependsOn": [
+							{
+								"activity": "hit api with token",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "parquet_info_0x41",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"timeout": "0.12:00:00",
+							"sleep": 10,
+							"childItems": true
+						}
+					},
+					{
+						"name": "Lookup1",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "Validation1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": false,
+									"wildcardFileName": "*.parquet",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "ParquetReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "parquet_info_0x41",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Delete1",
+						"type": "Delete",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "parquet_info_0x41",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"logStorageSettings": {
+								"linkedServiceName": {
+									"referenceName": "AzureDataLakeStorage1",
+									"type": "LinkedServiceReference"
+								},
+								"path": "testingcontainer/Log delete"
+							},
+							"enableLogging": true,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": false,
+								"wildcardFileName": "*.parquet",
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "Set variable1",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "Lookup1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "link",
+							"value": {
+								"value": "@activity('Lookup1').output.value[0].link",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "save data to adls",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Delete previous data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "HttpReadSettings",
+									"requestMethod": "GET"
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "BinaryInputFromLink",
+								"type": "DatasetReference",
+								"parameters": {
+									"DynamicURL": {
+										"value": "@replace(trim(variables('link')),'https://dx-datashare-common.toyota-asia.com/','')",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "BinaryOutputFromLink",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Data flow1",
+						"type": "ExecuteDataFlow",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [
+							{
+								"activity": "save data to adls",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "dataflow1_0x41",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"source1": {},
+									"sink1": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "None",
+							"cacheSinks": {
+								"firstRowOnly": true
+							}
+						}
+					},
+					{
+						"name": "Delete previous data",
+						"type": "Delete",
+						"dependsOn": [
+							{
+								"activity": "Set variable1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "folderpath",
+								"type": "DatasetReference",
+								"parameters": {
+									"folderdir": {
+										"value": "@concat('tcap/',replace(split(split(string(variables('link')),'/tcap/')[1],'/part-')[0],'%3D','='))",
+										"type": "Expression"
+									}
+								}
+							},
+							"logStorageSettings": {
+								"linkedServiceName": {
+									"referenceName": "AzureDataLakeStorage2Binary",
+									"type": "LinkedServiceReference"
+								},
+								"path": "testingcontainer/Log Overwrite"
+							},
+							"enableLogging": true,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "getToken",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "GetSecret",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "POST",
+							"headers": {
+								"Content-Type": "application/x-www-form-urlencoded",
+								"Authorization": {
+									"value": "@concat('Basic ', base64(activity('GetSecret').output.value))",
+									"type": "Expression"
+								}
+							},
+							"url": "https://auth-dx-datastream.ap.toyota-asia.com/oauth2/token",
+							"connectVia": {
+								"referenceName": "AutoResolveIntegrationRuntime",
+								"type": "IntegrationRuntimeReference"
+							},
+							"body": {
+								"value": "grant_type=client_credentials",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "GetSecret",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Delete1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "GET",
+							"headers": {},
+							"url": "https://kv-tam-adp-dev.vault.azure.net/secrets/kv-adf-adp-prd-idsec/c3fd02fd1ce14bc1b89f65e01a7c809e?api-version=7.4",
+							"connectVia": {
+								"referenceName": "AutoResolveIntegrationRuntime",
+								"type": "IntegrationRuntimeReference"
+							},
+							"authentication": {
+								"type": "MSI",
+								"resource": "https://vault.azure.net"
+							}
+						}
+					},
+					{
+						"name": "Get Current Config",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.00:10:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": false,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "ParquetReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "DS_ConfigDate_Parquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"folderPath": "ConfigDate",
+									"fileName": "Date.parquet"
+								}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Filter dataName",
+						"type": "Filter",
+						"dependsOn": [
+							{
+								"activity": "Get Current Config",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get Current Config').output.value",
+								"type": "Expression"
+							},
+							"condition": {
+								"value": "@equals(item().dataName, variables('p_dataName'))",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Execute update Date h-1",
+						"type": "ExecutePipeline",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [
+							{
+								"activity": "save data to adls",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_Update_ConfigDate",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"p_dataName": {
+									"value": "@variables('p_dataName')",
+									"type": "Expression"
+								}
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"counter": {
+						"type": "Integer",
+						"defaultValue": 0
+					},
+					"targetCount": {
+						"type": "Integer",
+						"defaultValue": 0
+					},
+					"link": {
+						"type": "String",
+						"defaultValue": " https://dx-datashare-common.toyota-asia.com"
+					},
+					"p_dataName": {
+						"type": "String",
+						"defaultValue": "0x41"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2026-10-20T07:31:29Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Test-API-S3-0x42')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "hit api with token",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "getToken",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "Filter dataName",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"httpRequestTimeout": "00:05:00",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "POST",
+								"requestBody": {
+									"value": "{\n    \"serviceRequestHeader\": {\n        \"requestCode\": \"RDP-DS-TAM-REQ-0x42\",\n        \"requestDescription\": \"The request to share the 0x42 data for TAM.\" \n    },\n    \"serviceRequestBody\":{\n        \"requestDate\":\"@{activity('Filter dataName').output.Value[0].date}\"\n    }\n}",
+									"type": "Expression"
+								},
+								"additionalHeaders": {
+									"Content-Type": "application/json",
+									"Authorization": {
+										"value": "@concat('Bearer ',activity('getToken').output.access_token)",
+										"type": "Expression"
+									}
+								}
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "FlattenHierarchy"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"path": "$['serviceRequesHeader']['statusCode']"
+										},
+										"sink": {
+											"name": "statusCode"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceRequesHeader']['statusDescription']"
+										},
+										"sink": {
+											"name": "statusDescription"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['expirySeconds']"
+										},
+										"sink": {
+											"name": "expirySeconds"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['fileFormat']"
+										},
+										"sink": {
+											"name": "fileFormat"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['datasetLinks'][0]['fileName']"
+										},
+										"sink": {
+											"name": "fileName"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['datasetLinks'][0]['link']"
+										},
+										"sink": {
+											"name": "link"
+										}
+									}
+								],
+								"collectionReference": ""
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "RestResource1_0x42",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "parquet_info_0x42",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Validation1",
+						"type": "Validation",
+						"dependsOn": [
+							{
+								"activity": "hit api with token",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "parquet_info_0x42",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"timeout": "0.12:00:00",
+							"sleep": 10,
+							"childItems": true
+						}
+					},
+					{
+						"name": "Lookup1",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "Validation1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": false,
+									"wildcardFileName": "*.parquet",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "ParquetReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "parquet_info_0x42",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Delete1",
+						"type": "Delete",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "parquet_info_0x42",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"logStorageSettings": {
+								"linkedServiceName": {
+									"referenceName": "AzureDataLakeStorage1",
+									"type": "LinkedServiceReference"
+								},
+								"path": "testingcontainer/Log delete"
+							},
+							"enableLogging": true,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": false,
+								"wildcardFileName": "*.parquet",
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "Set variable1",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "Lookup1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "link",
+							"value": {
+								"value": "@activity('Lookup1').output.value[0].link",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "save data to adls",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Delete previous data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "HttpReadSettings",
+									"requestMethod": "GET"
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "BinaryInputFromLink",
+								"type": "DatasetReference",
+								"parameters": {
+									"DynamicURL": {
+										"value": "@replace(trim(variables('link')),'https://dx-datashare-common.toyota-asia.com/','')",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "BinaryOutputFromLink",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Delete previous data",
+						"type": "Delete",
+						"dependsOn": [
+							{
+								"activity": "Set variable1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "folderpath",
+								"type": "DatasetReference",
+								"parameters": {
+									"folderdir": {
+										"value": "@concat('tcap/',replace(split(split(string(variables('link')),'/tcap/')[1],'/part-')[0],'%3D','='))",
+										"type": "Expression"
+									}
+								}
+							},
+							"logStorageSettings": {
+								"linkedServiceName": {
+									"referenceName": "AzureDataLakeStorage2Binary",
+									"type": "LinkedServiceReference"
+								},
+								"path": "testingcontainer/Log Overwrite"
+							},
+							"enableLogging": true,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "Notebook process to raw",
+						"type": "DatabricksNotebook",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [
+							{
+								"activity": "save data to adls",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebookPath": "/Users/azarel.adi@ag-it.com/project-adp-notebook/pipelines/source2raw/nb_source2raw_0x42"
+						},
+						"linkedServiceName": {
+							"referenceName": "AzureDatabricks1",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "getToken",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "GetSecret",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "POST",
+							"headers": {
+								"Content-Type": "application/x-www-form-urlencoded",
+								"Authorization": {
+									"value": "@concat('Basic ', base64(activity('GetSecret').output.value))",
+									"type": "Expression"
+								}
+							},
+							"url": "https://auth-dx-datastream.ap.toyota-asia.com/oauth2/token",
+							"connectVia": {
+								"referenceName": "AutoResolveIntegrationRuntime",
+								"type": "IntegrationRuntimeReference"
+							},
+							"body": {
+								"value": "grant_type=client_credentials",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "GetSecret",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Delete1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "GET",
+							"headers": {},
+							"url": "https://kv-tam-adp-dev.vault.azure.net/secrets/kv-adf-adp-prd-idsec/c3fd02fd1ce14bc1b89f65e01a7c809e?api-version=7.4",
+							"connectVia": {
+								"referenceName": "AutoResolveIntegrationRuntime",
+								"type": "IntegrationRuntimeReference"
+							},
+							"authentication": {
+								"type": "MSI",
+								"resource": "https://vault.azure.net"
+							}
+						}
+					},
+					{
+						"name": "Execute update Date h-1",
+						"type": "ExecutePipeline",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [
+							{
+								"activity": "save data to adls",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_Update_ConfigDate",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"p_dataName": {
+									"value": "@variables('p_dataName')",
+									"type": "Expression"
+								}
+							}
+						}
+					},
+					{
+						"name": "Get Current Config",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.00:10:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": false,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "ParquetReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "DS_ConfigDate_Parquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"folderPath": "ConfigDate",
+									"fileName": "Date.parquet"
+								}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Filter dataName",
+						"type": "Filter",
+						"dependsOn": [
+							{
+								"activity": "Get Current Config",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get Current Config').output.value",
+								"type": "Expression"
+							},
+							"condition": {
+								"value": "@equals(item().dataName, variables('p_dataName'))",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"counter": {
+						"type": "Integer",
+						"defaultValue": 0
+					},
+					"targetCount": {
+						"type": "Integer",
+						"defaultValue": 0
+					},
+					"link": {
+						"type": "String",
+						"defaultValue": " https://dx-datashare-common.toyota-asia.com"
+					},
+					"p_dataName": {
+						"type": "String",
+						"defaultValue": "0x42"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2026-10-20T07:31:29Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Test-API-S3-dtc')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "hit api with token",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "getToken",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "Filter dataName",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"httpRequestTimeout": "00:05:00",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "POST",
+								"requestBody": {
+									"value": "{\n\"serviceRequestHeader\": {\n\"requestCode\": \"RDP-DS-TAM-REQ-DTC\",\n\"requestDescription\": \"The request to share the DTC data for TAM.\"\n},\n\"serviceRequestBody\":{\n\"requestDate\":\"@{activity('Filter dataName').output.Value[0].date}\"\n}\n}",
+									"type": "Expression"
+								},
+								"additionalHeaders": {
+									"Content-Type": "application/json",
+									"Authorization": {
+										"value": "@concat('Bearer ',activity('getToken').output.access_token)",
+										"type": "Expression"
+									}
+								}
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"path": "$['serviceRequesHeader']['statusCode']"
+										},
+										"sink": {
+											"name": "statusCode"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceRequesHeader']['statusDescription']"
+										},
+										"sink": {
+											"name": "statusDescription"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['expirySeconds']"
+										},
+										"sink": {
+											"name": "expirySeconds"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['fileFormat']"
+										},
+										"sink": {
+											"name": "fileFormat"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['datasetLinks'][0]['fileName']"
+										},
+										"sink": {
+											"name": "fileName"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['datasetLinks'][0]['link']"
+										},
+										"sink": {
+											"name": "link"
+										}
+									}
+								],
+								"collectionReference": ""
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "RestResource1_dtc",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "parquet_info_dtc",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Validation1",
+						"type": "Validation",
+						"dependsOn": [
+							{
+								"activity": "hit api with token",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "parquet_info_dtc",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"timeout": "0.12:00:00",
+							"sleep": 10,
+							"childItems": true
+						}
+					},
+					{
+						"name": "Lookup1",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "Validation1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": false,
+									"wildcardFileName": "*.parquet",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "ParquetReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "parquet_info_dtc",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Delete1",
+						"type": "Delete",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "parquet_info_dtc",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"logStorageSettings": {
+								"linkedServiceName": {
+									"referenceName": "AzureDataLakeStorage1",
+									"type": "LinkedServiceReference"
+								},
+								"path": "testingcontainer/Log delete"
+							},
+							"enableLogging": true,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": false,
+								"wildcardFileName": "*.parquet",
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "Set variable1",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "Lookup1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "link",
+							"value": {
+								"value": "@activity('Lookup1').output.value[0].link",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "save data to adls",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Delete previous data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "HttpReadSettings",
+									"requestMethod": "GET"
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "BinaryInputFromLink",
+								"type": "DatasetReference",
+								"parameters": {
+									"DynamicURL": {
+										"value": "@replace(trim(variables('link')),'https://dx-datashare-common.toyota-asia.com/','')",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "BinaryOutputFromLink",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Delete previous data",
+						"type": "Delete",
+						"dependsOn": [
+							{
+								"activity": "Set variable1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "folderpath",
+								"type": "DatasetReference",
+								"parameters": {
+									"folderdir": {
+										"value": "tcap/id/dtc/",
+										"type": "Expression"
+									}
+								}
+							},
+							"logStorageSettings": {
+								"linkedServiceName": {
+									"referenceName": "AzureDataLakeStorage2Binary",
+									"type": "LinkedServiceReference"
+								},
+								"path": "testingcontainer/Log Overwrite"
+							},
+							"enableLogging": true,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "Notebook process to raw",
+						"type": "DatabricksNotebook",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [
+							{
+								"activity": "save data to adls",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"notebookPath": "/Users/azarel.adi@ag-it.com/project-adp-notebook/pipelines/source2raw/nb_source2raw_0x42"
+						},
+						"linkedServiceName": {
+							"referenceName": "AzureDatabricks1",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "getToken",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "GetSecret",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "POST",
+							"headers": {
+								"Content-Type": "application/x-www-form-urlencoded",
+								"Authorization": {
+									"value": "@concat('Basic ', base64(activity('GetSecret').output.value))",
+									"type": "Expression"
+								}
+							},
+							"url": "https://auth-dx-datastream.ap.toyota-asia.com/oauth2/token",
+							"connectVia": {
+								"referenceName": "AutoResolveIntegrationRuntime",
+								"type": "IntegrationRuntimeReference"
+							},
+							"body": {
+								"value": "grant_type=client_credentials",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "GetSecret",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Delete1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "GET",
+							"headers": {},
+							"url": "https://kv-tam-adp-dev.vault.azure.net/secrets/kv-adf-adp-prd-idsec/c3fd02fd1ce14bc1b89f65e01a7c809e?api-version=7.4",
+							"connectVia": {
+								"referenceName": "AutoResolveIntegrationRuntime",
+								"type": "IntegrationRuntimeReference"
+							},
+							"authentication": {
+								"type": "MSI",
+								"resource": "https://vault.azure.net"
+							}
+						}
+					},
+					{
+						"name": "Get Current Config",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.00:10:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": false,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "ParquetReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "DS_ConfigDate_Parquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"folderPath": "ConfigDate",
+									"fileName": "Date.parquet"
+								}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Filter dataName",
+						"type": "Filter",
+						"dependsOn": [
+							{
+								"activity": "Get Current Config",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get Current Config').output.value",
+								"type": "Expression"
+							},
+							"condition": {
+								"value": "@equals(item().dataName, variables('p_dataName'))",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Execute update Date h-1",
+						"type": "ExecutePipeline",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [
+							{
+								"activity": "save data to adls",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_Update_ConfigDate",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"p_dataName": {
+									"value": "@variables('p_dataName')",
+									"type": "Expression"
+								}
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"counter": {
+						"type": "Integer",
+						"defaultValue": 0
+					},
+					"targetCount": {
+						"type": "Integer",
+						"defaultValue": 0
+					},
+					"link": {
+						"type": "String",
+						"defaultValue": " https://dx-datashare-common.toyota-asia.com"
+					},
+					"p_dataName": {
+						"type": "String",
+						"defaultValue": "dtc"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2026-10-20T07:31:29Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Test-API-S3-phyd-0x21')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "hit api with token",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "getToken",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "Filter dataName",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"httpRequestTimeout": "00:05:00",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "POST",
+								"requestBody": {
+									"value": "{\n\"serviceRequestHeader\": {\n\"requestCode\": \"RDP-DS-TAM-REQ-0x21\",\n\"requestDescription\": \"The request to share the 0x11 data for TAM.\"\n},\n\"serviceRequestBody\":{\n\"requestDate\":\"@{activity('Filter dataName').output.Value[0].date}\"\n}\n}",
+									"type": "Expression"
+								},
+								"additionalHeaders": {
+									"Content-Type": "application/json",
+									"Authorization": {
+										"value": "@concat('Bearer ',activity('getToken').output.access_token)",
+										"type": "Expression"
+									}
+								}
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"path": "$['serviceRequesHeader']['statusCode']"
+										},
+										"sink": {
+											"name": "statusCode"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceRequesHeader']['statusDescription']"
+										},
+										"sink": {
+											"name": "statusDescription"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['expirySeconds']"
+										},
+										"sink": {
+											"name": "expirySeconds"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['fileFormat']"
+										},
+										"sink": {
+											"name": "fileFormat"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['datasetLinks'][0]['fileName']"
+										},
+										"sink": {
+											"name": "fileName"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['datasetLinks'][0]['link']"
+										},
+										"sink": {
+											"name": "link"
+										}
+									}
+								],
+								"collectionReference": ""
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "RestResource1_phyd_0x21",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "parquet_info_0x21",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Validation1",
+						"type": "Validation",
+						"dependsOn": [
+							{
+								"activity": "hit api with token",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "parquet_info_0x21",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"timeout": "0.12:00:00",
+							"sleep": 10,
+							"childItems": true
+						}
+					},
+					{
+						"name": "Lookup1",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "Validation1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": false,
+									"wildcardFileName": "*.parquet",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "ParquetReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "parquet_info_0x21",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Delete1",
+						"type": "Delete",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "parquet_info_0x21",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"logStorageSettings": {
+								"linkedServiceName": {
+									"referenceName": "AzureDataLakeStorage1",
+									"type": "LinkedServiceReference"
+								},
+								"path": "testingcontainer/Log delete"
+							},
+							"enableLogging": true,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": false,
+								"wildcardFileName": "*.parquet",
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "Set variable1",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "Lookup1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "link",
+							"value": {
+								"value": "@activity('Lookup1').output.value[0].link",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "save data to adls",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Delete previous data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "HttpReadSettings",
+									"requestMethod": "GET"
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "BinaryInputFromLink",
+								"type": "DatasetReference",
+								"parameters": {
+									"DynamicURL": {
+										"value": "@replace(trim(variables('link')),'https://dx-datashare-common.toyota-asia.com/','')",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "BinaryOutputFromLink",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Data flow2",
+						"type": "ExecuteDataFlow",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [
+							{
+								"activity": "save data to adls",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "dataflow2_phyd-ox21",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"source1": {},
+									"sink1": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "None",
+							"cacheSinks": {
+								"firstRowOnly": true
+							}
+						}
+					},
+					{
+						"name": "Delete previous data",
+						"type": "Delete",
+						"dependsOn": [
+							{
+								"activity": "Set variable1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "folderpath",
+								"type": "DatasetReference",
+								"parameters": {
+									"folderdir": {
+										"value": "@concat('tcap/',replace(split(split(string(variables('link')),'/tcap/')[1],'/part-')[0],'%3D','='))",
+										"type": "Expression"
+									}
+								}
+							},
+							"logStorageSettings": {
+								"linkedServiceName": {
+									"referenceName": "AzureDataLakeStorage2Binary",
+									"type": "LinkedServiceReference"
+								},
+								"path": "testingcontainer/Log Overwrite"
+							},
+							"enableLogging": true,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "getToken",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "GetSecret",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "POST",
+							"headers": {
+								"Content-Type": "application/x-www-form-urlencoded",
+								"Authorization": {
+									"value": "@concat('Basic ', base64(activity('GetSecret').output.value))",
+									"type": "Expression"
+								}
+							},
+							"url": "https://auth-dx-datastream.ap.toyota-asia.com/oauth2/token",
+							"connectVia": {
+								"referenceName": "AutoResolveIntegrationRuntime",
+								"type": "IntegrationRuntimeReference"
+							},
+							"body": {
+								"value": "grant_type=client_credentials",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "GetSecret",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Delete1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "GET",
+							"headers": {},
+							"url": "https://kv-tam-adp-dev.vault.azure.net/secrets/kv-adf-adp-prd-idsec/c3fd02fd1ce14bc1b89f65e01a7c809e?api-version=7.4",
+							"connectVia": {
+								"referenceName": "AutoResolveIntegrationRuntime",
+								"type": "IntegrationRuntimeReference"
+							},
+							"authentication": {
+								"type": "MSI",
+								"resource": "https://vault.azure.net"
+							}
+						}
+					},
+					{
+						"name": "Get Current Config",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.00:10:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": false,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "ParquetReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "DS_ConfigDate_Parquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"folderPath": "ConfigDate",
+									"fileName": "Date.parquet"
+								}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Filter dataName",
+						"type": "Filter",
+						"dependsOn": [
+							{
+								"activity": "Get Current Config",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get Current Config').output.value",
+								"type": "Expression"
+							},
+							"condition": {
+								"value": "@equals(item().dataName, variables('p_dataName'))",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Execute update Date h-1",
+						"type": "ExecutePipeline",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [
+							{
+								"activity": "save data to adls",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_Update_ConfigDate",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"p_dataName": {
+									"value": "@variables('p_dataName')",
+									"type": "Expression"
+								}
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"counter": {
+						"type": "Integer",
+						"defaultValue": 0
+					},
+					"targetCount": {
+						"type": "Integer",
+						"defaultValue": 0
+					},
+					"link": {
+						"type": "String",
+						"defaultValue": " https://dx-datashare-common.toyota-asia.com"
+					},
+					"p_dataName": {
+						"type": "String",
+						"defaultValue": "0x21"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2026-10-20T07:31:29Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Test-API-S3-telt-0x21')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "hit api with token",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "getToken",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "Filter dataName",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "RestSource",
+								"httpRequestTimeout": "00:05:00",
+								"requestInterval": "00.00:00:00.010",
+								"requestMethod": "POST",
+								"requestBody": {
+									"value": "{\n\"serviceRequestHeader\": {\n\"requestCode\": \"RDP-DS-TAM-REQ-0x21-TELT\",\n\"requestDescription\": \"The request to share the 0x21 teltonika data for TAM.\"\n},\n\"serviceRequestBody\":{\n\"requestDate\":\"@{activity('Filter dataName').output.Value[0].date}\"\n}\n}",
+									"type": "Expression"
+								},
+								"additionalHeaders": {
+									"Content-Type": "application/json",
+									"Authorization": {
+										"value": "@concat('Bearer ',activity('getToken').output.access_token)",
+										"type": "Expression"
+									}
+								}
+							},
+							"sink": {
+								"type": "ParquetSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								},
+								"formatSettings": {
+									"type": "ParquetWriteSettings"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"path": "$['serviceRequesHeader']['statusCode']"
+										},
+										"sink": {
+											"name": "statusCode"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceRequesHeader']['statusDescription']"
+										},
+										"sink": {
+											"name": "statusDescription"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['expirySeconds']"
+										},
+										"sink": {
+											"name": "expirySeconds"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['fileFormat']"
+										},
+										"sink": {
+											"name": "fileFormat"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['datasetLinks'][0]['fileName']"
+										},
+										"sink": {
+											"name": "fileName"
+										}
+									},
+									{
+										"source": {
+											"path": "$['serviceResponseBody']['datasetLinks'][0]['link']"
+										},
+										"sink": {
+											"name": "link"
+										}
+									}
+								],
+								"collectionReference": ""
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "RestResource1_telt_0x21",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "parquet_info_0x21_telt",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Validation1",
+						"type": "Validation",
+						"dependsOn": [
+							{
+								"activity": "hit api with token",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "parquet_info_0x21_telt",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"timeout": "0.12:00:00",
+							"sleep": 10,
+							"childItems": true
+						}
+					},
+					{
+						"name": "Lookup1",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "Validation1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": false,
+									"wildcardFileName": "*.parquet",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "ParquetReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "parquet_info_0x21_telt",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Delete1",
+						"type": "Delete",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "parquet_info_0x21_telt",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"logStorageSettings": {
+								"linkedServiceName": {
+									"referenceName": "AzureDataLakeStorage1",
+									"type": "LinkedServiceReference"
+								},
+								"path": "testingcontainer/Log delete"
+							},
+							"enableLogging": true,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": false,
+								"wildcardFileName": "*.parquet",
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "Set variable1",
+						"type": "SetVariable",
+						"dependsOn": [
+							{
+								"activity": "Lookup1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"variableName": "link",
+							"value": {
+								"value": "@activity('Lookup1').output.value[0].link",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "save data to adls",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Delete previous data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "HttpReadSettings",
+									"requestMethod": "GET"
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings",
+									"copyBehavior": "PreserveHierarchy"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "BinaryInputFromLink",
+								"type": "DatasetReference",
+								"parameters": {
+									"DynamicURL": {
+										"value": "@replace(trim(variables('link')),'https://dx-datashare-common.toyota-asia.com/','')",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "BinaryOutputFromLink",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Data flow2",
+						"type": "ExecuteDataFlow",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [
+							{
+								"activity": "save data to adls",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "dataflow2_telt-ox21",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"source1": {},
+									"sink1": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "None",
+							"cacheSinks": {
+								"firstRowOnly": true
+							}
+						}
+					},
+					{
+						"name": "Delete previous data",
+						"type": "Delete",
+						"dependsOn": [
+							{
+								"activity": "Set variable1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "folderpath",
+								"type": "DatasetReference",
+								"parameters": {
+									"folderdir": {
+										"value": "@concat('tcap/',replace(split(split(string(variables('link')),'/tcap/')[1],'/part-')[0],'%3D','='))",
+										"type": "Expression"
+									}
+								}
+							},
+							"logStorageSettings": {
+								"linkedServiceName": {
+									"referenceName": "AzureDataLakeStorage2Binary",
+									"type": "LinkedServiceReference"
+								},
+								"path": "testingcontainer/Log Overwrite"
+							},
+							"enableLogging": true,
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							}
+						}
+					},
+					{
+						"name": "getToken",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "GetSecret",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "POST",
+							"headers": {
+								"Content-Type": "application/x-www-form-urlencoded",
+								"Authorization": {
+									"value": "@concat('Basic ', base64(activity('GetSecret').output.value))",
+									"type": "Expression"
+								}
+							},
+							"url": "https://auth-dx-datastream.ap.toyota-asia.com/oauth2/token",
+							"connectVia": {
+								"referenceName": "AutoResolveIntegrationRuntime",
+								"type": "IntegrationRuntimeReference"
+							},
+							"body": {
+								"value": "grant_type=client_credentials",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "GetSecret",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Delete1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"method": "GET",
+							"headers": {},
+							"url": "https://kv-tam-adp-dev.vault.azure.net/secrets/kv-adf-adp-prd-idsec/c3fd02fd1ce14bc1b89f65e01a7c809e?api-version=7.4",
+							"connectVia": {
+								"referenceName": "AutoResolveIntegrationRuntime",
+								"type": "IntegrationRuntimeReference"
+							},
+							"authentication": {
+								"type": "MSI",
+								"resource": "https://vault.azure.net"
+							}
+						}
+					},
+					{
+						"name": "Get Current Config",
+						"type": "Lookup",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.00:10:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ParquetSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": false,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "ParquetReadSettings"
+								}
+							},
+							"dataset": {
+								"referenceName": "DS_ConfigDate_Parquet",
+								"type": "DatasetReference",
+								"parameters": {
+									"folderPath": "ConfigDate",
+									"fileName": "Date.parquet"
+								}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Filter dataName",
+						"type": "Filter",
+						"dependsOn": [
+							{
+								"activity": "Get Current Config",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get Current Config').output.value",
+								"type": "Expression"
+							},
+							"condition": {
+								"value": "@equals(item().dataName, variables('p_dataName'))",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Execute update Date h-1",
+						"type": "ExecutePipeline",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [
+							{
+								"activity": "save data to adls",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_Update_ConfigDate",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {
+								"p_dataName": {
+									"value": "@variables('p_dataName')",
+									"type": "Expression"
+								}
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"variables": {
+					"counter": {
+						"type": "Integer",
+						"defaultValue": 0
+					},
+					"targetCount": {
+						"type": "Integer",
+						"defaultValue": 0
+					},
+					"link": {
+						"type": "String",
+						"defaultValue": " https://dx-datashare-common.toyota-asia.com"
+					},
+					"p_dataName": {
+						"type": "String",
+						"defaultValue": "0x21telt"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2026-10-20T07:31:29Z"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Orchestration')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Execute 0x41",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Execute 0x12",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Test-API-S3-0x41",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Execute 0x42",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Execute 0x41",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Test-API-S3-0x42",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Execute 0x21 phyd",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Execute DTC",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Test-API-S3-phyd-0x21",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Execute 0x21 telt",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Execute 0x21 phyd",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Test-API-S3-telt-0x21",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Execute DTC",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Execute 0x42",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Test-API-S3-dtc",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Execute 0x11",
+						"type": "ExecutePipeline",
+						"dependsOn": [],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Test-API-S3-0x11",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Execute 0x32",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Execute 0x11",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Test-API-S3-0x32",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Execute 0x12",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Execute 0x32",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Test-API-S3-0x12",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Execute 0x32 imp",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Execute 0x21 telt",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "Test-API-S3-0x32-imp",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Execute update all Date h-1",
+						"description": "Update date semua dataName di ConfigDate/Date.parquet ke H-1 sekaligus, setelah semua pipeline 0x selesai (sukses/gagal).",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Execute 0x32 imp",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_Update_ConfigDate_All",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2026-10-20T06:26:42Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/Test-API-S3-0x41')]",
+				"[concat(variables('factoryId'), '/pipelines/Test-API-S3-0x42')]",
+				"[concat(variables('factoryId'), '/pipelines/Test-API-S3-phyd-0x21')]",
+				"[concat(variables('factoryId'), '/pipelines/Test-API-S3-telt-0x21')]",
+				"[concat(variables('factoryId'), '/pipelines/Test-API-S3-dtc')]",
+				"[concat(variables('factoryId'), '/pipelines/Test-API-S3-0x32')]",
+				"[concat(variables('factoryId'), '/pipelines/Test-API-S3-0x12')]",
+				"[concat(variables('factoryId'), '/pipelines/Test-API-S3-0x32-imp')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Orchestration')]",
+			"type": "Microsoft.DataFactory/factories/triggers",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Stopped",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "Orchestration",
+							"type": "PipelineReference"
+						},
+						"parameters": {}
+					}
+				],
+				"type": "ScheduleTrigger",
+				"typeProperties": {
+					"recurrence": {
+						"frequency": "Day",
+						"interval": 1,
+						"startTime": "2026-10-01T07:35:00",
+						"timeZone": "SE Asia Standard Time",
+						"schedule": {
+							"minutes": [
+								0
+							],
+							"hours": [
+								10
+							]
+						}
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/Orchestration')]"
+			]
+		}
+	]
+}

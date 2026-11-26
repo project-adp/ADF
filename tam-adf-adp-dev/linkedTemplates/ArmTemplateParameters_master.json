@@ -1,0 +1,127 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"value": "tam-adf-adp-dev"
+		},
+		"AmazonS31_secretAccessKey": {
+			"value": ""
+		},
+		"AzureDataLakeStorage1_accountKey": {
+			"value": ""
+		},
+		"AzureDataLakeStorage2Binary_accountKey": {
+			"value": ""
+		},
+		"AzureDatabricks1_accessToken": {
+			"value": ""
+		},
+		"AzureDatabricksDeltaLake1_accessToken": {
+			"value": ""
+		},
+		"AzureSqlDatabase1_password": {
+			"value": ""
+		},
+		"RestService1_clientSecret": {
+			"value": ""
+		},
+		"AmazonS31_properties_typeProperties_accessKeyId": {
+			"value": "5bcvvfm2vl2tj4l0fnmnolsm1q"
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"value": "https://stadlsadpdev.dfs.core.windows.net/"
+		},
+		"AzureDataLakeStorage2Binary_properties_typeProperties_url": {
+			"value": "https://stadlsadpdev.dfs.core.windows.net/"
+		},
+		"AzureDatabricks1_properties_typeProperties_existingClusterId": {
+			"value": "0806-092546-wfjkmmu2"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_server": {
+			"value": "sql-adp-dev.database.windows.net"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_database": {
+			"value": "db-adp-dev"
+		},
+		"AzureSqlDatabase1_properties_typeProperties_userName": {
+			"value": "sqladmin"
+		},
+		"HttpServer1_properties_typeProperties_url": {
+			"value": "https://dx-datastream-tam-api-dev.toyota-asia.com/"
+		},
+		"HttpServer2_properties_typeProperties_url": {
+			"value": "https://dx-datashare-common.toyota-asia.com/"
+		},
+		"RestService1_properties_typeProperties_url": {
+			"value": "https://dx-datastream-tam-api.toyota-asia.com"
+		},
+		"RestService1_properties_typeProperties_clientId": {
+			"value": "1pnhsb07p3o130hdaa0abol181"
+		},
+		"RestService2_properties_typeProperties_url": {
+			"value": "https://dx-datashare-common.toyota-asia.com/"
+		},
+		"AzureBlobStorage887_properties_privateLinkResourceId": {
+			"value": "/subscriptions/1aa8e62a-afdc-45ad-ad0b-c8ee3a339937/resourceGroups/rg-adp-dev/providers/Microsoft.Storage/storageAccounts/stadlsadpdev"
+		},
+		"AzureBlobStorage887_properties_groupId": {
+			"value": "blob"
+		},
+		"AzureBlobStorage887_properties_fqdns": {
+			"value": [
+				"stadlsadpdev.blob.core.windows.net"
+			]
+		},
+		"AzureDataLakeStorage135_properties_privateLinkResourceId": {
+			"value": "/subscriptions/1aa8e62a-afdc-45ad-ad0b-c8ee3a339937/resourceGroups/rg-adp-dev/providers/Microsoft.Storage/storageAccounts/stadlsadpdev"
+		},
+		"AzureDataLakeStorage135_properties_groupId": {
+			"value": "dfs"
+		},
+		"AzureDataLakeStorage135_properties_fqdns": {
+			"value": [
+				"stadlsadpdev.dfs.core.windows.net"
+			]
+		},
+		"AzureDatabricks435_properties_privateLinkResourceId": {
+			"value": "/subscriptions/1f1971f8-299f-4b81-a442-063a9167cc72/resourceGroups/rg-didx-dev/providers/Microsoft.Databricks/workspaces/adb-didx-dev"
+		},
+		"AzureDatabricks435_properties_groupId": {
+			"value": "databricks_ui_api"
+		},
+		"AzureDatabricks435_properties_fqdns": {
+			"value": [
+				"adb-4230496331526218.18.azuredatabricks.net"
+			]
+		},
+		"AzureKeyVaultADPDev_properties_privateLinkResourceId": {
+			"value": "/subscriptions/1aa8e62a-afdc-45ad-ad0b-c8ee3a339937/resourceGroups/rg-adp-dev/providers/Microsoft.KeyVault/vaults/kv-tam-adp-dev"
+		},
+		"AzureKeyVaultADPDev_properties_groupId": {
+			"value": "vault"
+		},
+		"AzureKeyVaultADPDev_properties_fqdns": {
+			"value": [
+				"kv-tam-adp-dev.vault.azure.net"
+			]
+		},
+		"AzureSqlDatabase153_properties_privateLinkResourceId": {
+			"value": "/subscriptions/1aa8e62a-afdc-45ad-ad0b-c8ee3a339937/resourceGroups/rg-adp-dev/providers/Microsoft.Sql/servers/sql-adp-dev"
+		},
+		"AzureSqlDatabase153_properties_groupId": {
+			"value": "sqlServer"
+		},
+		"AzureSqlDatabase153_properties_fqdns": {
+			"value": [
+				"sql-adp-dev.database.windows.net"
+			]
+		},
+		"containerUri": {
+			"value": ""
+		},
+		"containerSasToken": {
+			"value": ""
+		}
+	}
+}
