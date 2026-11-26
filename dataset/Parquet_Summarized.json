@@ -1,0 +1,21 @@
+{
+	"name": "Parquet_Summarized",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage2Binary",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "Gold/telematics_summarized",
+				"fileSystem": "testingcontainer"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,176 @@
+{
+	"name": "ExcelNewDescriptiveDummy",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Excel",
+		"typeProperties": {
+			"sheetName": "Descriptive Insight",
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": "Dummy Data for Testing.xlsx",
+				"folderPath": "Manual Upload",
+				"fileSystem": "testingcontainer"
+			},
+			"firstRowAsHeader": true
+		},
+		"schema": [
+			{
+				"name": "VIN",
+				"type": "String"
+			},
+			{
+				"name": "Latest IG Off Date",
+				"type": "String"
+			},
+			{
+				"name": "Production Year",
+				"type": "String"
+			},
+			{
+				"name": "Telematics Subscription",
+				"type": "String"
+			},
+			{
+				"name": "Dealer Origin",
+				"type": "String"
+			},
+			{
+				"name": "Sales Date",
+				"type": "String"
+			},
+			{
+				"name": "Odometer",
+				"type": "String"
+			},
+			{
+				"name": "Most Visited Area",
+				"type": "String"
+			},
+			{
+				"name": "All Time Avg KM/Trip",
+				"type": "String"
+			},
+			{
+				"name": "Last Month Avg KM/Trip",
+				"type": "String"
+			},
+			{
+				"name": "All Time Avg KM/Month",
+				"type": "String"
+			},
+			{
+				"name": "Last Month Avg KM/Month",
+				"type": "String"
+			},
+			{
+				"name": "All Time Avg Trip/Week",
+				"type": "String"
+			},
+			{
+				"name": "Last Month Avg Trip/Week",
+				"type": "String"
+			},
+			{
+				"name": "All Time Avg Idle Occurence/Week",
+				"type": "String"
+			},
+			{
+				"name": "Last Month Avg Idle Occurence/Week",
+				"type": "String"
+			},
+			{
+				"name": "All Time Avg Duration/Trip",
+				"type": "String"
+			},
+			{
+				"name": "Last Month Avg Duration/Trip",
+				"type": "String"
+			},
+			{
+				"name": "All Time Avg Speed/Trip",
+				"type": "String"
+			},
+			{
+				"name": "Last Month Avg Speed/Trip",
+				"type": "String"
+			},
+			{
+				"name": "Fuel Consumption (KM/L)",
+				"type": "String"
+			},
+			{
+				"name": "Most Used Day",
+				"type": "String"
+			},
+			{
+				"name": "Least Used Day",
+				"type": "String"
+			},
+			{
+				"name": "Battery Voltage",
+				"type": "String"
+			},
+			{
+				"name": "Intra City Trip Percentage",
+				"type": "String"
+			},
+			{
+				"name": "Inter City Trip Percentage",
+				"type": "String"
+			},
+			{
+				"name": "Harsh Acceleration/100KM",
+				"type": "String"
+			},
+			{
+				"name": "Harsh Brake/100KM",
+				"type": "String"
+			},
+			{
+				"name": "Harsh Cornering/100KM",
+				"type": "String"
+			},
+			{
+				"name": "Current Active DTC Code",
+				"type": "String"
+			},
+			{
+				"name": "Current Active DTC Category",
+				"type": "String"
+			},
+			{
+				"name": "Current Active Warning",
+				"type": "String"
+			},
+			{
+				"name": "Latest Collision History Detected",
+				"type": "String"
+			},
+			{
+				"name": "Latest Service Date (GR)",
+				"type": "String"
+			},
+			{
+				"name": "Latest Service Detail (GR)",
+				"type": "String"
+			},
+			{
+				"name": "Latest Service Date (BP)",
+				"type": "String"
+			},
+			{
+				"name": "Latest Service Detail (BP)",
+				"type": "String"
+			},
+			{
+				"name": "Device Type",
+				"type": "String"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

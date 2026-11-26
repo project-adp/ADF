@@ -1,0 +1,331 @@
+{
+	"name": "PL_Update_ConfigDate",
+	"properties": {
+		"description": "Update kolom date di testingcontainer/ConfigDate/Date.parquet untuk SATU dataName (p_dataName). Tanggal baru dari activity 'Set New Date': p_date kalau diisi (yyyy-MM-dd), kalau kosong hari ini WIB + p_dayOffset (default -1 = kemarin).",
+		"activities": [
+			{
+				"name": "Set New Date",
+				"description": "Function penentu tanggal baru: p_date (override manual) atau hari ini WIB + p_dayOffset",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_newDate",
+					"value": {
+						"value": "@if(empty(trim(coalesce(pipeline().parameters.p_date, ''))), formatDateTime(addDays(convertFromUtc(utcNow(), 'SE Asia Standard Time'), pipeline().parameters.p_dayOffset), 'yyyy-MM-dd'), formatDateTime(trim(pipeline().parameters.p_date), 'yyyy-MM-dd'))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Get Current Config",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.00:10:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": false,
+							"enablePartitionDiscovery": false
+						}
+					},
+					"dataset": {
+						"referenceName": "DS_ConfigDate_Parquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"folderPath": "ConfigDate",
+							"fileName": "Date.parquet"
+						}
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "Filter dataName",
+				"type": "Filter",
+				"dependsOn": [
+					{
+						"activity": "Get Current Config",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('Get Current Config').output.value",
+						"type": "Expression"
+					},
+					"condition": {
+						"value": "@equals(item().dataName, pipeline().parameters.p_dataName)",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Check dataName Exists",
+				"description": "Gagalkan pipeline kalau p_dataName tidak ada di Date.parquet (biar typo tidak lolos diam-diam)",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Filter dataName",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(activity('Filter dataName').output.FilteredItemsCount, 0)",
+						"type": "Expression"
+					},
+					"ifTrueActivities": [
+						{
+							"name": "Fail dataName Not Found",
+							"type": "Fail",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"message": {
+									"value": "@concat('dataName ', pipeline().parameters.p_dataName, ' tidak ditemukan di ConfigDate/Date.parquet')",
+									"type": "Expression"
+								},
+								"errorCode": "404"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Update Date for dataName",
+				"description": "Data flow: date = v_newDate hanya untuk baris dataName = p_dataName, tulis ke ConfigDate/_staging/Date.parquet",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [
+					{
+						"activity": "Set New Date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Check dataName Exists",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.01:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "DF_Update_ConfigDate",
+						"type": "DataFlowReference",
+						"parameters": {
+							"p_dataName": {
+								"value": "'@{pipeline().parameters.p_dataName}'",
+								"type": "Expression"
+							},
+							"p_newDate": {
+								"value": "'@{variables('v_newDate')}'",
+								"type": "Expression"
+							}
+						},
+						"datasetParameters": {
+							"srcConfigDate": {
+								"folderPath": "ConfigDate",
+								"fileName": "Date.parquet"
+							},
+							"sinkStaging": {
+								"folderPath": "ConfigDate/_staging",
+								"fileName": "Date.parquet"
+							}
+						}
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
+				}
+			},
+			{
+				"name": "Overwrite Date Parquet",
+				"description": "Timpa ConfigDate/Date.parquet dengan hasil staging",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Update Date for dataName",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.00:10:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": false,
+							"enablePartitionDiscovery": false
+						}
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_ConfigDate_Parquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"folderPath": "ConfigDate/_staging",
+							"fileName": "Date.parquet"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_ConfigDate_Parquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"folderPath": "ConfigDate",
+							"fileName": "Date.parquet"
+						}
+					}
+				]
+			},
+			{
+				"name": "Delete Staging File",
+				"type": "Delete",
+				"dependsOn": [
+					{
+						"activity": "Overwrite Date Parquet",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.00:10:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_ConfigDate_Parquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"folderPath": "ConfigDate/_staging",
+							"fileName": "Date.parquet"
+						}
+					},
+					"enableLogging": false,
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": false,
+						"enablePartitionDiscovery": false
+					}
+				}
+			},
+			{
+				"name": "Verify Updated Date",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Overwrite Date Parquet",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.00:10:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": false,
+							"enablePartitionDiscovery": false
+						}
+					},
+					"dataset": {
+						"referenceName": "DS_ConfigDate_Parquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"folderPath": "ConfigDate",
+							"fileName": "Date.parquet"
+						}
+					},
+					"firstRowOnly": false
+				}
+			}
+		],
+		"parameters": {
+			"p_dataName": {
+				"type": "string",
+				"defaultValue": "0x11"
+			},
+			"p_date": {
+				"type": "string"
+			},
+			"p_dayOffset": {
+				"type": "int",
+				"defaultValue": -1
+			}
+		},
+		"variables": {
+			"v_newDate": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-10-14T05:11:37Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

@@ -1,0 +1,27 @@
+{
+	"name": "folderpath",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage2Binary",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"folderdir": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": {
+					"value": "Bronze/@{dataset().folderdir}",
+					"type": "Expression"
+				},
+				"fileSystem": "testingcontainer"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

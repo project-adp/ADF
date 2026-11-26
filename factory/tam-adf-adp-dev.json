@@ -1,0 +1,16 @@
+{
+	"name": "tam-adf-adp-dev",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true,
+			"isExplicitlySet": false
+		}
+	},
+	"location": "southeastasia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "c7df4292-32c4-4507-88df-aeec4f5f2d2b",
+		"tenantId": "52d4e358-2ecb-48e2-bad4-d3c62441ff17"
+	}
+}

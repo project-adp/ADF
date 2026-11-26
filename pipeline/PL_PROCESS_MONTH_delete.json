@@ -1,0 +1,106 @@
+{
+	"name": "PL_PROCESS_MONTH_delete",
+	"properties": {
+		"activities": [
+			{
+				"name": "GM MONTH",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_ADLS_FOLDER",
+						"type": "DatasetReference",
+						"parameters": {
+							"folderPath": {
+								"value": "@concat(\n    'Bronze/tcap/id/',\n    pipeline().parameters.p_id,\n    '/year=',\n    pipeline().parameters.p_year\n)",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEach Month",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "GM MONTH",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('GM MONTH').output.childItems",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Execute PL_PROCESS_DAY",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_PROCESS_DAY_delete",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"p_id": {
+										"value": "@pipeline().parameters.p_id",
+										"type": "Expression"
+									},
+									"p_year": {
+										"value": "@pipeline().parameters.p_year",
+										"type": "Expression"
+									},
+									"p_month": {
+										"value": "@item().name",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"p_id": {
+				"type": "string"
+			},
+			"p_year": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-10-07T06:40:49Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

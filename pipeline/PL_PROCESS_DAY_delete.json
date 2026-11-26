@@ -1,0 +1,164 @@
+{
+	"name": "PL_PROCESS_DAY_delete",
+	"properties": {
+		"activities": [
+			{
+				"name": "GM DAY",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_ADLS_FOLDER",
+						"type": "DatasetReference",
+						"parameters": {
+							"folderPath": {
+								"value": "@concat(\n    'Bronze/tcap/id/',\n    pipeline().parameters.p_id,\n    '/year=',\n    pipeline().parameters.p_year,\n    '/',\n    pipeline().parameters.p_month\n)",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"childItems"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "ForEach DAY",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "GM DAY",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('GM DAY').output.childItems",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "If Condition1",
+							"type": "IfCondition",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"expression": {
+									"value": "@less(\n    concat(\n        pipeline().parameters.p_year,\n        '-',\n        replace(pipeline().parameters.p_month, 'month=', ''),\n        '-',\n        replace(item().name, 'day=', '')\n    ),\n    formatDateTime(\n        addDays(utcNow(), -7),\n        'yyyy-MM-dd'\n    )\n)",
+									"type": "Expression"
+								},
+								"ifFalseActivities": [
+									{
+										"name": "file tidak masuk kategori",
+										"type": "Lookup",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"source": {
+												"type": "ParquetSource",
+												"storeSettings": {
+													"type": "AzureBlobFSReadSettings",
+													"recursive": true,
+													"wildcardFileName": "*.parquet",
+													"enablePartitionDiscovery": false
+												},
+												"formatSettings": {
+													"type": "ParquetReadSettings"
+												}
+											},
+											"dataset": {
+												"referenceName": "Parquet1_0x41",
+												"type": "DatasetReference"
+											}
+										}
+									}
+								],
+								"ifTrueActivities": [
+									{
+										"name": "Delete1",
+										"type": "Delete",
+										"dependsOn": [],
+										"policy": {
+											"timeout": "0.12:00:00",
+											"retry": 0,
+											"retryIntervalInSeconds": 30,
+											"secureOutput": false,
+											"secureInput": false
+										},
+										"userProperties": [],
+										"typeProperties": {
+											"dataset": {
+												"referenceName": "DS_ADLS_FOLDER",
+												"type": "DatasetReference",
+												"parameters": {
+													"folderPath": {
+														"value": "@concat(\n    'Bronze/tcap/id/',\n    pipeline().parameters.p_id,\n    '/year=',\n    pipeline().parameters.p_year,\n    '/',\n    pipeline().parameters.p_month,\n    '/',\n    item().name\n)",
+														"type": "Expression"
+													}
+												}
+											},
+											"logStorageSettings": {
+												"linkedServiceName": {
+													"referenceName": "AzureDataLakeStorage1",
+													"type": "LinkedServiceReference"
+												},
+												"path": "testingcontainer/Log delete"
+											},
+											"enableLogging": true,
+											"storeSettings": {
+												"type": "AzureBlobFSReadSettings",
+												"recursive": true,
+												"enablePartitionDiscovery": false
+											}
+										}
+									}
+								]
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"p_id": {
+				"type": "string"
+			},
+			"p_year": {
+				"type": "string"
+			},
+			"p_month": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-11-05T08:53:35Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

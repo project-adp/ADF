@@ -1,0 +1,1214 @@
+{
+	"name": "ADLS-SQL_ERROR",
+	"properties": {
+		"activities": [
+			{
+				"name": "Summary Insight",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Descriptive Insight",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"wildcardFileName": "*.parquet",
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "ParquetReadSettings"
+						}
+					},
+					"sink": {
+						"type": "AzureSqlSink",
+						"preCopyScript": "TRUNCATE table  dbo.telematics_summarized_insight",
+						"writeBehavior": "insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "vin",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "vin",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "driving_score",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "driving_score",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "odometer_tampered_detection",
+									"type": "Boolean",
+									"physicalType": "BOOLEAN"
+								},
+								"sink": {
+									"name": "odometer_tampered_detection",
+									"type": "Boolean",
+									"physicalType": "bit"
+								}
+							},
+							{
+								"source": {
+									"name": "usage_frequency_comparison",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "usage_frequency_comparison",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "odometer_accumulation_comparison",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "odometer_accumulation_comparison",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "inter_intra_city_usage_category",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "inter_intra_city_usage_category",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "insight_summary",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "insight_summary",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Parquet_Summarized",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSqlTableSummaryInsight",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "Descriptive Insight Historical",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Summary Insight",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"wildcardFileName": "*.parquet",
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "ParquetReadSettings"
+						}
+					},
+					"sink": {
+						"type": "AzureSqlSink",
+						"preCopyScript": "delete from dbo.telematics_descriptive_insight_historical",
+						"writeBehavior": "insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "file_timestamp",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "snapshot_date",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "vin",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "vin",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "igon_timestamp",
+									"type": "Int64",
+									"physicalType": "INT_64"
+								},
+								"sink": {
+									"name": "latest_ig_off_date",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "production_year",
+									"type": "Int32",
+									"physicalType": "INT_32"
+								},
+								"sink": {
+									"name": "production_year",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "telematics_subscription",
+									"type": "Boolean",
+									"physicalType": "BOOLEAN"
+								},
+								"sink": {
+									"name": "telematics_subscription",
+									"type": "Boolean",
+									"physicalType": "bit"
+								}
+							},
+							{
+								"source": {
+									"name": "dealer_origin",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "dealer_origin",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "sales_date",
+									"type": "Int64",
+									"physicalType": "INT_64"
+								},
+								"sink": {
+									"name": "sales_date",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "odometer",
+									"type": "Single",
+									"physicalType": "FLOAT"
+								},
+								"sink": {
+									"name": "odometer",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "most_visited_area",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "most_visited_area",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "all_time_avg_km_per_trip",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "all_time_avg_km_per_trip",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "last_month_avg_km_per_trip",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "last_month_avg_km_per_trip",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "all_time_avg_km_per_month",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "all_time_avg_km_per_month",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "last_month_avg_km_per_month",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "last_month_avg_km_per_month",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "all_time_avg_trips_per_week",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "all_time_avg_trips_per_week",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "last_month_avg_trips_per_week",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "last_month_avg_trips_per_week",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "all_time_avg_idle_occurrences_per_week",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "all_time_avg_idle_occurrences_per_week",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "last_month_avg_idle_occurrences_per_week",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "last_month_avg_idle_occurrences_per_week",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "all_time_avg_duration_per_trip",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "all_time_avg_duration_per_trip",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "last_month_avg_duration_per_trip",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "last_month_avg_duration_per_trip",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "all_time_avg_speed_per_trip",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "all_time_avg_speed_per_trip",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "last_month_avg_speed_per_trip",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "last_month_avg_speed_per_trip",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "fuel_consumption_km_per_liter",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "fuel_consumption_km_per_liter",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "most_used_day",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "most_used_day",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "least_used_day",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "least_used_day",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "battery_voltage",
+									"type": "Single",
+									"physicalType": "FLOAT"
+								},
+								"sink": {
+									"name": "battery_voltage",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "intra_city_trip_percentage",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "intra_city_trip_percentage",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "inter_city_trip_percentage",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "inter_city_trip_percentage",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "harsh_acceleration_per_100_km",
+									"type": "Int32",
+									"physicalType": "INT_32"
+								},
+								"sink": {
+									"name": "harsh_acceleration_per_100_km",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "harsh_brake_per_100_km",
+									"type": "Int32",
+									"physicalType": "INT_32"
+								},
+								"sink": {
+									"name": "harsh_brake_per_100_km",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "harsh_cornering_per_100_km",
+									"type": "Int32",
+									"physicalType": "INT_32"
+								},
+								"sink": {
+									"name": "harsh_cornering_per_100_km",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "current_active_dtc_code",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "current_active_dtc_code",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "current_active_dtc_category",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "current_active_dtc_category",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "current_active_warning",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "current_active_warning",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "latest_collision_history_detected",
+									"type": "Int64",
+									"physicalType": "INT_64"
+								},
+								"sink": {
+									"name": "latest_collision_history_detected",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "latest_service_date_gr",
+									"type": "Int64",
+									"physicalType": "INT_64"
+								},
+								"sink": {
+									"name": "latest_service_date_gr",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "latest_service_detail_gr",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "latest_service_detail_gr",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "latest_service_date_bp",
+									"type": "Int64",
+									"physicalType": "INT_64"
+								},
+								"sink": {
+									"name": "latest_service_date_bp",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "latest_service_detail_bp",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "latest_service_detail_bp",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "device_type",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "device_type",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Parquet_Descriptive_Historical",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSqlTableSDescriptiveInsightHistorical",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "Descriptive Insight",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"wildcardFileName": "*.parquet",
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "ParquetReadSettings"
+						}
+					},
+					"sink": {
+						"type": "AzureSqlSink",
+						"writeBehavior": "insert",
+						"sqlWriterUseTableLock": false,
+						"disableMetricsCollection": false
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "vin",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "vin",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "igon_timestamp",
+									"type": "Int64",
+									"physicalType": "INT_64"
+								},
+								"sink": {
+									"name": "latest_ig_off_date",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "production_year",
+									"type": "Int32",
+									"physicalType": "INT_32"
+								},
+								"sink": {
+									"name": "production_year",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "telematics_subscription",
+									"type": "Boolean",
+									"physicalType": "BOOLEAN"
+								},
+								"sink": {
+									"name": "telematics_subscription",
+									"type": "Boolean",
+									"physicalType": "bit"
+								}
+							},
+							{
+								"source": {
+									"name": "dealer_origin",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "dealer_origin",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "sales_date",
+									"type": "Int64",
+									"physicalType": "INT_64"
+								},
+								"sink": {
+									"name": "sales_date",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "odometer",
+									"type": "Single",
+									"physicalType": "FLOAT"
+								},
+								"sink": {
+									"name": "odometer",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "most_visited_area",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "most_visited_area",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "all_time_avg_km_per_trip",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "all_time_avg_km_per_trip",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "last_month_avg_km_per_trip",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "last_month_avg_km_per_trip",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "all_time_avg_km_per_month",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "all_time_avg_km_per_month",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "last_month_avg_km_per_month",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "last_month_avg_km_per_month",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "all_time_avg_trips_per_week",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "all_time_avg_trips_per_week",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "last_month_avg_trips_per_week",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "last_month_avg_trips_per_week",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "all_time_avg_idle_occurrences_per_week",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "all_time_avg_idle_occurrences_per_week",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "last_month_avg_idle_occurrences_per_week",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "last_month_avg_idle_occurrences_per_week",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "all_time_avg_duration_per_trip",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "all_time_avg_duration_per_trip",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "last_month_avg_duration_per_trip",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "last_month_avg_duration_per_trip",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "all_time_avg_speed_per_trip",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "all_time_avg_speed_per_trip",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "last_month_avg_speed_per_trip",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "last_month_avg_speed_per_trip",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "fuel_consumption_km_per_liter",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "fuel_consumption_km_per_liter",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "most_used_day",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "most_used_day",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "least_used_day",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "least_used_day",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "battery_voltage",
+									"type": "Single",
+									"physicalType": "FLOAT"
+								},
+								"sink": {
+									"name": "battery_voltage",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "intra_city_trip_percentage",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "intra_city_trip_percentage",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "inter_city_trip_percentage",
+									"type": "Double",
+									"physicalType": "DOUBLE"
+								},
+								"sink": {
+									"name": "inter_city_trip_percentage",
+									"type": "Double",
+									"physicalType": "float"
+								}
+							},
+							{
+								"source": {
+									"name": "harsh_acceleration_per_100_km",
+									"type": "Int32",
+									"physicalType": "INT_32"
+								},
+								"sink": {
+									"name": "harsh_acceleration_per_100_km",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "harsh_brake_per_100_km",
+									"type": "Int32",
+									"physicalType": "INT_32"
+								},
+								"sink": {
+									"name": "harsh_brake_per_100_km",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "harsh_cornering_per_100_km",
+									"type": "Int32",
+									"physicalType": "INT_32"
+								},
+								"sink": {
+									"name": "harsh_cornering_per_100_km",
+									"type": "Int32",
+									"physicalType": "int"
+								}
+							},
+							{
+								"source": {
+									"name": "current_active_dtc_code",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "current_active_dtc_code",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "current_active_dtc_category",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "current_active_dtc_category",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "current_active_warning",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "current_active_warning",
+									"type": "String",
+									"physicalType": "nvarchar"
+								}
+							},
+							{
+								"source": {
+									"name": "latest_collision_history_detected",
+									"type": "Int64",
+									"physicalType": "INT_64"
+								},
+								"sink": {
+									"name": "latest_collision_history_detected",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "latest_service_date_gr",
+									"type": "Int64",
+									"physicalType": "INT_64"
+								},
+								"sink": {
+									"name": "latest_service_date_gr",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "latest_service_detail_gr",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "latest_service_detail_gr",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "latest_service_date_bp",
+									"type": "Int64",
+									"physicalType": "INT_64"
+								},
+								"sink": {
+									"name": "latest_service_date_bp",
+									"type": "Int64",
+									"physicalType": "bigint"
+								}
+							},
+							{
+								"source": {
+									"name": "latest_service_detail_bp",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "latest_service_detail_bp",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "device_type",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "device_type",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							},
+							{
+								"source": {
+									"name": "file_timestamp",
+									"type": "String",
+									"physicalType": "UTF8"
+								},
+								"sink": {
+									"name": "snapshot_date",
+									"type": "String",
+									"physicalType": "varchar"
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Parquet_Descriptive",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "AzureSqlTable1_0x12",
+						"type": "DatasetReference"
+					}
+				]
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2026-10-21T09:20:14Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

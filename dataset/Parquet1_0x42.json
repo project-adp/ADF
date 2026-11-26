@@ -1,0 +1,21 @@
+{
+	"name": "Parquet1_0x42",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage2Binary",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "Parquet file from link/tcap/id/0x42_igoff/year=2026/month=08/day=17",
+				"fileSystem": "testingcontainer"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,17 @@
+{
+	"name": "AzureSqlTable1_phyd_0x21",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "datasetPhyd0x21"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

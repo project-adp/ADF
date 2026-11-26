@@ -1,0 +1,17 @@
+{
+	"name": "AzureSqlTable1_0x41",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "dataset0x41"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

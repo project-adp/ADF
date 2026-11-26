@@ -1,0 +1,27 @@
+{
+	"name": "DS_ADLS_ADP_RETENTION",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"p_folder_path": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": {
+					"value": "Bronze/tcap/id/@{dataset().p_folder_path}",
+					"type": "Expression"
+				},
+				"fileSystem": "testingcontainer"
+			}
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

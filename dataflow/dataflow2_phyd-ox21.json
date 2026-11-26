@@ -1,0 +1,92 @@
+{
+	"name": "dataflow2_phyd-ox21",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Parquet2_phyd_0x21",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable1_phyd_0x21",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "alterRow1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          vin as string,",
+				"          timestamp as string,",
+				"          create_msg_timestamp as string,",
+				"          create_timestamp as string,",
+				"          event_type as integer,",
+				"          g_sensor_value as float,",
+				"          gps_direction as integer,",
+				"          gps_lat_angle as float,",
+				"          gps_lat_direction as integer,",
+				"          gps_lon_angle as float,",
+				"          gps_lon_direction as integer,",
+				"          gps_position_status as integer,",
+				"          gps_timestamp as string,",
+				"          imp_flag as boolean,",
+				"          original_timestamp as string,",
+				"          ttl as integer,",
+				"          upd_timestamp as string,",
+				"          src_file_nm as string,",
+				"          source_file_name as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: true,",
+				"     format: 'parquet') ~> source1",
+				"source1 alterRow(insertIf(true()),",
+				"     updateIf(true())) ~> alterRow1",
+				"alterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:true,",
+				"     upsertable:false,",
+				"     keys:['vin'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          vin,",
+				"          timestamp,",
+				"          create_msg_timestamp,",
+				"          create_timestamp,",
+				"          event_type,",
+				"          g_sensor_value,",
+				"          gps_direction,",
+				"          gps_lat_angle,",
+				"          gps_lat_direction,",
+				"          gps_lon_angle,",
+				"          gps_lon_direction,",
+				"          gps_position_status,",
+				"          gps_timestamp,",
+				"          imp_flag,",
+				"          original_timestamp,",
+				"          ttl,",
+				"          upd_timestamp,",
+				"          src_file_nm,",
+				"          source_file_name",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}

@@ -1,0 +1,196 @@
+{
+	"name": "AzureSqlTable_NewDescriptiveInsight",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "vin",
+				"type": "varchar"
+			},
+			{
+				"name": "latest_ig_off_date",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "production_year",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "telematics_subscription",
+				"type": "bit"
+			},
+			{
+				"name": "dealer_origin",
+				"type": "varchar"
+			},
+			{
+				"name": "sales_date",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "odometer",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "most_visited_area",
+				"type": "varchar"
+			},
+			{
+				"name": "all_time_avg_km_per_trip",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "last_month_avg_km_per_trip",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "all_time_avg_km_per_month",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "last_month_avg_km_per_month",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "all_time_avg_trips_per_week",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "last_month_avg_trips_per_week",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "all_time_avg_idle_occurrences_per_week",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "last_month_avg_idle_occurrences_per_week",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "all_time_avg_duration_per_trip",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "last_month_avg_duration_per_trip",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "all_time_avg_speed_per_trip",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "last_month_avg_speed_per_trip",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "fuel_consumption_km_per_liter",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "most_used_day",
+				"type": "varchar"
+			},
+			{
+				"name": "least_used_day",
+				"type": "varchar"
+			},
+			{
+				"name": "battery_voltage",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "intra_city_trip_percentage",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "inter_city_trip_percentage",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "harsh_acceleration_per_100_km",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "harsh_brake_per_100_km",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "harsh_cornering_per_100_km",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "current_active_dtc_code",
+				"type": "nvarchar"
+			},
+			{
+				"name": "current_active_dtc_category",
+				"type": "nvarchar"
+			},
+			{
+				"name": "current_active_warning",
+				"type": "nvarchar"
+			},
+			{
+				"name": "latest_collision_history_detected",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "latest_service_date_gr",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "latest_service_detail_gr",
+				"type": "varchar"
+			},
+			{
+				"name": "latest_service_date_bp",
+				"type": "bigint",
+				"precision": 19
+			},
+			{
+				"name": "latest_service_detail_bp",
+				"type": "varchar"
+			},
+			{
+				"name": "device_type",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "telematics_descriptive_insight_new"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

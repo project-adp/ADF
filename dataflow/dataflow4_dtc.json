@@ -1,0 +1,80 @@
+{
+	"name": "dataflow4_dtc",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DelimitedText1_dtc",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable1_dtc",
+						"type": "DatasetReference"
+					},
+					"name": "sink1",
+					"description": "Export data to AzureSqlTable1_0x42"
+				}
+			],
+			"transformations": [
+				{
+					"name": "AlterRow1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          {#} as short,",
+				"          {DTC No. (7Digit)} as string,",
+				"          {DTC No. (5Digit)} as string,",
+				"          {DTC Name_ENG} as string,",
+				"          {DTC Name_JPN} as string,",
+				"          {Total FTB Selection} as string,",
+				"          {WNG点灯} as string,",
+				"          {Priority DTC} as string,",
+				"          {Priority DTC_Category} as string,",
+				"          {Not Priority} as string,",
+				"          {main system_ENG} as string,",
+				"          {main system_JPN} as string,",
+				"          Category as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: true) ~> source1",
+				"source1 alterRow(insertIf(true()),",
+				"     updateIf(true())) ~> AlterRow1",
+				"AlterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:true,",
+				"     upsertable:false,",
+				"     keys:[' (7Digit)'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          {#},",
+				"          { (7Digit)} = {DTC No. (7Digit)},",
+				"          { (5Digit)} = {DTC No. (5Digit)},",
+				"          {DTC Name_ENG},",
+				"          {DTC Name_JPN},",
+				"          {Total FTB Selection},",
+				"          {WNG点灯},",
+				"          {Priority DTC},",
+				"          {Priority DTC_Category},",
+				"          {Not Priority},",
+				"          {main system_ENG},",
+				"          {main system_JPN},",
+				"          Category",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}

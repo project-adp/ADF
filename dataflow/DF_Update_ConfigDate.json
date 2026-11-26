@@ -1,0 +1,57 @@
+{
+	"name": "DF_Update_ConfigDate",
+	"properties": {
+		"description": "Update kolom date di Date.parquet hanya untuk baris dengan dataName = $p_dataName. Hasil ditulis ke file staging (single file).",
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_ConfigDate_Parquet",
+						"type": "DatasetReference"
+					},
+					"name": "srcConfigDate"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DS_ConfigDate_Parquet",
+						"type": "DatasetReference"
+					},
+					"name": "sinkStaging"
+				}
+			],
+			"transformations": [
+				{
+					"name": "updateDate"
+				}
+			],
+			"scriptLines": [
+				"parameters{",
+				"     p_dataName as string,",
+				"     p_newDate as string",
+				"}",
+				"source(output(",
+				"          dataName as string,",
+				"          date as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'parquet') ~> srcConfigDate",
+				"srcConfigDate derive(date = iif(dataName == $p_dataName, $p_newDate, {date})) ~> updateDate",
+				"updateDate sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'parquet',",
+				"     partitionFileNames:['Date.parquet'],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     partitionBy('hash', 1)) ~> sinkStaging"
+			]
+		}
+	}
+}

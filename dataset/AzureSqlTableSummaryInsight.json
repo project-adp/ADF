@@ -1,0 +1,47 @@
+{
+	"name": "AzureSqlTableSummaryInsight",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "vin",
+				"type": "varchar"
+			},
+			{
+				"name": "driving_score",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "odometer_tampered_detection",
+				"type": "bit"
+			},
+			{
+				"name": "usage_frequency_comparison",
+				"type": "varchar"
+			},
+			{
+				"name": "odometer_accumulation_comparison",
+				"type": "varchar"
+			},
+			{
+				"name": "inter_intra_city_usage_category",
+				"type": "varchar"
+			},
+			{
+				"name": "insight_summary",
+				"type": "nvarchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "telematics_summarized_insight"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

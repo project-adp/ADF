@@ -1,0 +1,129 @@
+{
+	"name": "Pipeline_ADLS_TCAP_Retention_ScanPartition",
+	"properties": {
+		"activities": [
+			{
+				"name": "ForEach_test",
+				"type": "ForEach",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@pipeline().parameters.months",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "Get Metadata1",
+							"type": "GetMetadata",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"dataset": {
+									"referenceName": "DS_ADLS_ADP_RETENTION",
+									"type": "DatasetReference",
+									"parameters": {
+										"p_folder_path": {
+											"value": "@concat(\n    pipeline().parameters.dataset,\n    '/',\n    pipeline().parameters.year,\n    '/',\n    item().name\n)",
+											"type": "Expression"
+										}
+									}
+								},
+								"fieldList": [
+									"itemName",
+									"lastModified",
+									"childItems"
+								],
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							}
+						},
+						{
+							"name": "Append variable1",
+							"type": "AppendVariable",
+							"dependsOn": [
+								{
+									"activity": "Get Metadata1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "v_toBE_Deleted",
+								"value": {
+									"value": "@concat(\n    pipeline().parameters.dataset,\n    '/',\n    pipeline().parameters.year,\n    '/',activity('Get Metadata1').output.itemName\n)",
+									"type": "Expression"
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Set variable1",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "ForEach_test",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_log",
+					"value": {
+						"value": "@string(variables('v_toBE_Deleted'))",
+						"type": "Expression"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"months": {
+				"type": "array"
+			},
+			"year": {
+				"type": "string"
+			},
+			"dataset": {
+				"type": "string"
+			},
+			"retention_day": {
+				"type": "int"
+			}
+		},
+		"variables": {
+			"v_toBE_Deleted": {
+				"type": "Array"
+			},
+			"v_log": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-10-05T09:45:34Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

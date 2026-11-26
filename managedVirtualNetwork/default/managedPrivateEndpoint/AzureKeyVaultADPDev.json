@@ -1,0 +1,10 @@
+{
+	"name": "AzureKeyVaultADPDev",
+	"properties": {
+		"privateLinkResourceId": "/subscriptions/1aa8e62a-afdc-45ad-ad0b-c8ee3a339937/resourceGroups/rg-adp-dev/providers/Microsoft.KeyVault/vaults/kv-tam-adp-dev",
+		"groupId": "vault",
+		"fqdns": [
+			"kv-tam-adp-dev.vault.azure.net"
+		]
+	}
+}

@@ -1,0 +1,84 @@
+{
+	"name": "dataflow2_telt-ox21",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Parquet2_telt_0x21",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable1_telt_0x21",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				}
+			],
+			"transformations": [
+				{
+					"name": "alterRow1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          device_model as string,",
+				"          engine as string,",
+				"          gps_lat as string,",
+				"          gps_lon as string,",
+				"          gps_timestamp as string,",
+				"          gx as string,",
+				"          gy as string,",
+				"          gz as string,",
+				"          odo as string,",
+				"          speed as string,",
+				"          timestamp as string,",
+				"          vin as string,",
+				"          upd_timestamp as string,",
+				"          src_file_nm as string,",
+				"          source_file_name as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: true,",
+				"     format: 'parquet') ~> source1",
+				"source1 alterRow(insertIf(true()),",
+				"     updateIf(true())) ~> alterRow1",
+				"alterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:true,",
+				"     upsertable:false,",
+				"     keys:['vin'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          device_model,",
+				"          engine,",
+				"          gps_lat,",
+				"          gps_lon,",
+				"          gps_timestamp,",
+				"          gx,",
+				"          gy,",
+				"          gz,",
+				"          odo,",
+				"          speed,",
+				"          timestamp,",
+				"          vin,",
+				"          upd_timestamp,",
+				"          src_file_nm,",
+				"          source_file_name",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}

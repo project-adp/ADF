@@ -1,0 +1,39 @@
+{
+	"name": "DS_ConfigDate_Parquet",
+	"properties": {
+		"description": "Config tanggal per dataName (testingcontainer/ConfigDate/Date.parquet). Parameter folderPath/fileName dipakai juga untuk file staging.",
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage1",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"folderPath": {
+				"type": "string",
+				"defaultValue": "ConfigDate"
+			},
+			"fileName": {
+				"type": "string",
+				"defaultValue": "Date.parquet"
+			}
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@dataset().fileName",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().folderPath",
+					"type": "Expression"
+				},
+				"fileSystem": "testingcontainer"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

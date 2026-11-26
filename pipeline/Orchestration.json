@@ -1,0 +1,234 @@
+{
+	"name": "Orchestration",
+	"properties": {
+		"activities": [
+			{
+				"name": "Execute 0x41",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Execute 0x12",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "Test-API-S3-0x41",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "Execute 0x42",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Execute 0x41",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "Test-API-S3-0x42",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "Execute 0x21 phyd",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Execute DTC",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "Test-API-S3-phyd-0x21",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "Execute 0x21 telt",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Execute 0x21 phyd",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "Test-API-S3-telt-0x21",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "Execute DTC",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Execute 0x42",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "Test-API-S3-dtc",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "Execute 0x11",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "Test-API-S3-0x11",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "Execute 0x32",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Execute 0x11",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "Test-API-S3-0x32",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "Execute 0x12",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Execute 0x32",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "Test-API-S3-0x12",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "Execute 0x32 imp",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Execute 0x21 telt",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "Test-API-S3-0x32-imp",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "Execute update all Date h-1",
+				"description": "Update date semua dataName di ConfigDate/Date.parquet ke H-1 sekaligus, setelah semua pipeline 0x selesai (sukses/gagal).",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Execute 0x32 imp",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_Update_ConfigDate_All",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2026-10-20T06:26:42Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

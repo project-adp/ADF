@@ -1,0 +1,227 @@
+{
+	"name": "PL_Update_ConfigDate_All",
+	"properties": {
+		"description": "Update kolom date di testingcontainer/ConfigDate/Date.parquet untuk SEMUA dataName sekaligus (1x data flow DF_Update_ConfigDate_All). Tanggal baru dari activity 'Set New Date': p_date kalau diisi (yyyy-MM-dd), kalau kosong hari ini WIB + p_dayOffset (default -1 = kemarin). Dipanggil di akhir pipeline Orchestration.",
+		"activities": [
+			{
+				"name": "Set New Date",
+				"description": "Function penentu tanggal baru: p_date (override manual) atau hari ini WIB + p_dayOffset",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_newDate",
+					"value": {
+						"value": "@if(empty(trim(coalesce(pipeline().parameters.p_date, ''))), formatDateTime(addDays(convertFromUtc(utcNow(), 'SE Asia Standard Time'), pipeline().parameters.p_dayOffset), 'yyyy-MM-dd'), formatDateTime(trim(pipeline().parameters.p_date), 'yyyy-MM-dd'))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Update All Dates",
+				"description": "Set kolom date SEMUA baris (semua dataName) jadi v_newDate via DF_Update_ConfigDate_All, hasil ke ConfigDate/_staging_all/Date.parquet",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [
+					{
+						"activity": "Set New Date",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.01:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "DF_Update_ConfigDate_All",
+						"type": "DataFlowReference",
+						"parameters": {
+							"p_newDate": {
+								"value": "'@{variables('v_newDate')}'",
+								"type": "Expression"
+							}
+						},
+						"datasetParameters": {
+							"srcConfigDate": {
+								"folderPath": "ConfigDate",
+								"fileName": "Date.parquet"
+							},
+							"sinkStaging": {
+								"folderPath": "ConfigDate/_staging_all",
+								"fileName": "Date.parquet"
+							}
+						}
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
+				}
+			},
+			{
+				"name": "Overwrite Date Parquet",
+				"description": "Timpa ConfigDate/Date.parquet dengan hasil staging",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "Update All Dates",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.00:10:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": false,
+							"enablePartitionDiscovery": false
+						}
+					},
+					"sink": {
+						"type": "ParquetSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "ParquetWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_ConfigDate_Parquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"folderPath": "ConfigDate/_staging_all",
+							"fileName": "Date.parquet"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_ConfigDate_Parquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"folderPath": "ConfigDate",
+							"fileName": "Date.parquet"
+						}
+					}
+				]
+			},
+			{
+				"name": "Delete Staging File",
+				"type": "Delete",
+				"dependsOn": [
+					{
+						"activity": "Overwrite Date Parquet",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.00:10:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_ConfigDate_Parquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"folderPath": "ConfigDate/_staging_all",
+							"fileName": "Date.parquet"
+						}
+					},
+					"enableLogging": false,
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": false,
+						"enablePartitionDiscovery": false
+					}
+				}
+			},
+			{
+				"name": "Verify Updated Date",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Overwrite Date Parquet",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.00:10:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": false,
+							"enablePartitionDiscovery": false
+						}
+					},
+					"dataset": {
+						"referenceName": "DS_ConfigDate_Parquet",
+						"type": "DatasetReference",
+						"parameters": {
+							"folderPath": "ConfigDate",
+							"fileName": "Date.parquet"
+						}
+					},
+					"firstRowOnly": false
+				}
+			}
+		],
+		"parameters": {
+			"p_date": {
+				"type": "string"
+			},
+			"p_dayOffset": {
+				"type": "int",
+				"defaultValue": -1
+			}
+		},
+		"variables": {
+			"v_newDate": {
+				"type": "String"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2026-10-20T06:26:41Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

@@ -1,0 +1,21 @@
+{
+	"name": "Parquet_Descriptive_Historical",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureDataLakeStorage2Binary",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "Gold/telematics_descriptive_historical",
+				"fileSystem": "testingcontainer"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

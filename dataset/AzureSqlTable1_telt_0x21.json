@@ -1,0 +1,17 @@
+{
+	"name": "AzureSqlTable1_telt_0x21",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureSqlDatabase1",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "datasetTelt0x21"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

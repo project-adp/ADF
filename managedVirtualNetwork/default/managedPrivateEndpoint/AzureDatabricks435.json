@@ -1,0 +1,10 @@
+{
+	"name": "AzureDatabricks435",
+	"properties": {
+		"privateLinkResourceId": "/subscriptions/1f1971f8-299f-4b81-a442-063a9167cc72/resourceGroups/rg-didx-dev/providers/Microsoft.Databricks/workspaces/adb-didx-dev",
+		"groupId": "databricks_ui_api",
+		"fqdns": [
+			"adb-4230496331526218.18.azuredatabricks.net"
+		]
+	}
+}

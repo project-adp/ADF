@@ -1,0 +1,10 @@
+{
+	"name": "AzureDataLakeStorage135",
+	"properties": {
+		"privateLinkResourceId": "/subscriptions/1aa8e62a-afdc-45ad-ad0b-c8ee3a339937/resourceGroups/rg-adp-dev/providers/Microsoft.Storage/storageAccounts/stadlsadpdev",
+		"groupId": "dfs",
+		"fqdns": [
+			"stadlsadpdev.dfs.core.windows.net"
+		]
+	}
+}

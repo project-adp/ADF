@@ -1,0 +1,108 @@
+{
+	"name": "dataflow2_0x32",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Parquet2_0x32",
+						"type": "DatasetReference"
+					},
+					"name": "source1",
+					"description": "Import data from Parquet2_0x32"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "AzureSqlTable1_0x32",
+						"type": "DatasetReference"
+					},
+					"name": "sink1",
+					"description": "Export data to AzureSqlTable1_0x32"
+				}
+			],
+			"transformations": [
+				{
+					"name": "alterRow1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          collision_type as integer,",
+				"          create_msg_timestamp as string,",
+				"          create_timestamp as string,",
+				"          g_sensor_value as float,",
+				"          original_timestamp as string,",
+				"          timestamp as string,",
+				"          ttl as integer,",
+				"          vin as string,",
+				"          upd_timestamp as string,",
+				"          src_file_nm as string,",
+				"          before_and_after_collision_g_sensor as float,",
+				"          gps_position_status as integer,",
+				"          gps_timestamp as string,",
+				"          gps_lat_angle as double,",
+				"          gps_lat_direction as integer,",
+				"          gps_lon_angle as double,",
+				"          gps_lon_direction as integer,",
+				"          gps_direction as integer,",
+				"          before_and_after_collision_gps_caputure as string,",
+				"          before_and_after_collision_gps_timestamp as string,",
+				"          before_and_after_collision_gps_lat_angle as string,",
+				"          before_and_after_collision_gps_lat_direct as string,",
+				"          before_and_after_collision_gps_lon_angle as string,",
+				"          before_and_after_collision_gps_lon_direct as string,",
+				"          before_and_after_collision_gps_direction as string,",
+				"          source_file_name as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: true,",
+				"     format: 'parquet') ~> source1",
+				"source1 alterRow(insertIf(true()),",
+				"     updateIf(true())) ~> alterRow1",
+				"alterRow1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:true,",
+				"     upsertable:false,",
+				"     keys:['vin'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          collision_type,",
+				"          create_msg_timestamp,",
+				"          create_timestamp,",
+				"          g_sensor_value,",
+				"          original_timestamp,",
+				"          timestamp,",
+				"          ttl,",
+				"          vin,",
+				"          upd_timestamp,",
+				"          src_file_nm,",
+				"          before_and_after_collision_g_sensor,",
+				"          gps_position_status,",
+				"          gps_timestamp,",
+				"          gps_lat_angle,",
+				"          gps_lat_direction,",
+				"          gps_lon_angle,",
+				"          gps_lon_direction,",
+				"          gps_direction,",
+				"          before_and_after_collision_gps_caputure,",
+				"          before_and_after_collision_gps_timestamp,",
+				"          before_and_after_collision_gps_lat_angle,",
+				"          before_and_after_collision_gps_lat_direct,",
+				"          before_and_after_collision_gps_lon_angle,",
+				"          before_and_after_collision_gps_lon_direct,",
+				"          before_and_after_collision_gps_direction,",
+				"          source_file_name",
+				"     )) ~> sink1"
+			]
+		}
+	}
+}
